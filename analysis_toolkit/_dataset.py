@@ -24,9 +24,9 @@ import yaml
 
 class _LocationColumnsDict(TypedDict):
     name: str
-    region: str
-    structure: str
-    hemisphere: str
+    region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    structure: Literal["FFA", "STG"]
+    hemisphere: Literal["L", "R"]
     center_x: int
     center_y: int
     center_z: int
@@ -39,11 +39,15 @@ class _LocationColumnsDict(TypedDict):
 
 CenterConfig = NamedTuple(
     "CenterConfig",
-    [("structure", str), ("hemisphere", str), ("hemisphere_config", dict)],
+    [
+        ("structure", Literal["FFA", "STG"]),
+        ("hemisphere", Literal["L", "R"]),
+        ("hemisphere_config", dict),
+    ],
 )
 
 
-def _get_region(structure: str, hemisphere: str) -> str:
+def _get_region(structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]) -> str:
     return f"{structure} {hemisphere}"
 
 
@@ -161,7 +165,7 @@ class Location:
 class _DatabaseColumnsDict(TypedDict):
     name: str
     type: Literal["Random", "Real"]
-    stimulation: str
+    stimulation: Literal["Auditory", "Visual"]
     subject: str
     data: np.ndarray
 
@@ -189,12 +193,15 @@ class _Database:
     RANDOM_SEED = 42
 
     def __new__(
-        cls, dirname: str, stimulation: str, get_path_func: Callable
+        cls,
+        dirname: str,
+        stimulation: Literal["Auditory", "Visual"],
+        get_path_func: Callable,
     ) -> pd.DataFrame:
         visual_df = pd.DataFrame(columns=_DatabaseColumnsDict.__annotations__.keys())
         for subject in os.listdir(dirname):
             path = get_path_func(subject)
-            data = cls._get_data(path)
+            data: Data = cls._get_data(path)
             for data_type in data._fields:
                 new_row: _DatabaseColumnsDict = {
                     "name": subject,
@@ -389,7 +396,9 @@ class Dataset:
         regions = self._location_config.index.tolist()
         return sorted(regions)
 
-    def _get_region_mask(self, region: str) -> np.ndarray:
+    def _get_region_mask(
+        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    ) -> np.ndarray:
         """
         Returns the mask for a specific region.
 
@@ -401,7 +410,9 @@ class Dataset:
         """
         return self._location_config.loc[region, "mask"].copy()
 
-    def _get_region_slices(self, region: str) -> Slices:
+    def _get_region_slices(
+        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    ) -> Slices:
         """
         Returns the slices for a specific region.
 
@@ -418,10 +429,14 @@ class Dataset:
         )
 
     @overload
-    def _get_region(self, region: str) -> str: ...
+    def _get_region(
+        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    ) -> str: ...
 
     @overload
-    def _get_region(self, structure: str, hemisphere: str) -> str: ...
+    def _get_region(
+        self, structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]
+    ) -> str: ...
 
     def _get_region(
         self,
@@ -450,10 +465,14 @@ class Dataset:
             return _get_region(structure, hemisphere)
 
     @overload
-    def get_region_mask(self, region: str) -> np.ndarray: ...
+    def get_region_mask(
+        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    ) -> np.ndarray: ...
 
     @overload
-    def get_region_mask(self, structure: str, hemisphere: str) -> np.ndarray: ...
+    def get_region_mask(
+        self, structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]
+    ) -> np.ndarray: ...
 
     def get_region_mask(
         self,
@@ -481,10 +500,14 @@ class Dataset:
         return self._get_region_mask(region)
 
     @overload
-    def get_region_slices(self, region: str) -> Slices: ...
+    def get_region_slices(
+        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    ) -> Slices: ...
 
     @overload
-    def get_region_slices(self, structure: str, hemisphere: str) -> Slices: ...
+    def get_region_slices(
+        self, structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]
+    ) -> Slices: ...
 
     def get_region_slices(
         self,
@@ -555,7 +578,7 @@ class Dataset:
         stimulations = self._database["stimulation"].unique().tolist()
         return sorted(stimulations)
 
-    def subjects(self, stimulation: str) -> list[str]:
+    def subjects(self, stimulation: Literal["Auditory", "Visual"]) -> list[str]:
         """
         Returns a sorted list of subjects for a specific stimulation.
 
@@ -572,7 +595,11 @@ class Dataset:
         )
         return sorted(subjects)
 
-    def subject_names(self, data_type: str, stimulation: str) -> list[str]:
+    def subject_names(
+        self,
+        data_type: Literal["Random", "Real"],
+        stimulation: Literal["Auditory", "Visual"],
+    ) -> list[str]:
         """
         Returns a sorted list of subject names for a specific data type
         and stimulation.
@@ -590,7 +617,12 @@ class Dataset:
         ].index.tolist()
         return sorted(subject_names)
 
-    def get_subject_name(self, data_type: str, stimulation: str, subject: str) -> str:
+    def get_subject_name(
+        self,
+        data_type: Literal["Random", "Real"],
+        stimulation: Literal["Auditory", "Visual"],
+        subject: str,
+    ) -> str:
         """
         Returns the subject name based on the given data type,
         stimulation, and subject.
@@ -611,7 +643,10 @@ class Dataset:
 
     @overload
     def get_whole_brain_data(
-        self, data_type: str, stimulation: str, subject: str
+        self,
+        data_type: Literal["Random", "Real"],
+        stimulation: Literal["Auditory", "Visual"],
+        subject: str,
     ) -> np.ndarray: ...
 
     @overload
@@ -620,8 +655,8 @@ class Dataset:
     def get_whole_brain_data(
         self,
         subject_name: Optional[str] = None,
-        data_type: Optional[str] = None,
-        stimulation: Optional[str] = None,
+        data_type: Optional[Literal["Random", "Real"]] = None,
+        stimulation: Optional[Literal["Auditory", "Visual"]] = None,
         subject: Optional[str] = None,
     ) -> np.ndarray:
         """
@@ -647,47 +682,45 @@ class Dataset:
 
     @overload
     def get_region_data(
-        self,
-        subject_name: str,
-        region: str,
+        self, subject_name: str, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
     ) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
         subject_name: str,
-        structure: str,
-        hemisphere: str,
+        structure: Literal["FFA", "STG"],
+        hemisphere: Literal["L", "R"],
     ) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
-        data_type: str,
-        stimulation: str,
+        data_type: Literal["Random", "Real"],
+        stimulation: Literal["Auditory", "Visual"],
         subject: str,
-        region: str,
+        region: Literal["FFA L", "FFA R", "STG L", "STG R"],
     ) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
-        data_type: str,
-        stimulation: str,
+        data_type: Literal["Random", "Real"],
+        stimulation: Literal["Auditory", "Visual"],
         subject: str,
-        structure: str,
-        hemisphere: str,
+        structure: Literal["FFA", "STG"],
+        hemisphere: Literal["L", "R"],
     ) -> np.ndarray: ...
 
     def get_region_data(
         self,
         subject_name: Optional[str] = None,
-        data_type: Optional[str] = None,
-        stimulation: Optional[str] = None,
+        data_type: Optional[Literal["Random", "Real"]] = None,
+        stimulation: Optional[Literal["Auditory", "Visual"]] = None,
         subject: Optional[str] = None,
-        region: Optional[str] = None,
-        structure: Optional[str] = None,
-        hemisphere: Optional[str] = None,
+        region: Optional[Literal["FFA L", "FFA R", "STG L", "STG R"]] = None,
+        structure: Optional[Literal["FFA", "STG"]] = None,
+        hemisphere: Optional[Literal["L", "R"]] = None,
     ) -> np.ndarray:
         """
         Returns the region data for a specific subject or based on the
@@ -728,8 +761,8 @@ class Dataset:
 @dataclasses.dataclass
 class SubjectSimilarityVector:
     subject_name: str
-    structure: str
-    hemisphere: str
+    structure: Literal["FFA", "STG"]
+    hemisphere: Literal["L", "R"]
     subject: str
     idx: int
     similarity_vector: np.ndarray
@@ -738,8 +771,11 @@ class SubjectSimilarityVector:
 @dataclasses.dataclass
 class SimilarityMatrix:
     matrix: np.ndarray
-    region: str
-    structure: str
-    hemisphere: str
-    stimulation_slices: dict[str, slice]
+    region: Literal["FFA L", "FFA R", "STG L", "STG R"]
+    structure: Literal["FFA", "STG"]
+    hemisphere: Literal["L", "R"]
+    stimulation_slices: dict[
+        Literal["Random Auditory", "Random Visual", "Real Auditory", "Real Visual"],
+        slice,
+    ]
     subject_vectors: dict[int, SubjectSimilarityVector]
