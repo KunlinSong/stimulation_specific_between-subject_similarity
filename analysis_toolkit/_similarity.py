@@ -1,4 +1,4 @@
-from typing import Callable, Literal, NamedTuple, Optional
+from typing import Callable, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 import scipy.spatial.distance as ssd
@@ -6,24 +6,58 @@ from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve
 from scipy.stats import pearsonr
 
+"""
+  The kernel size and sigma for spatial averaging and local pearson
+correlation coefficient."""
 KERNEL_SIZE = 3
 SIGMA = 1.0
 
-ConvolvePreprossResult = NamedTuple(
-    "ConvolvePreprossResult",
-    [("x", np.ndarray), ("y", Optional[np.ndarray]), ("kernel", np.ndarray)],
+ConvolvePreprocessResult = NamedTuple(
+    "ConvolvePreprocessResult",
+    [("data", np.ndarray), ("kernel", np.ndarray)],
+)
+
+ConvolvePreprocessResultList = NamedTuple(
+    "ConvolvePreprocessResultList",
+    [("data_lst", list[np.ndarray]), ("kernel", np.ndarray)],
 )
 
 
+@overload
 def _convolve_preprocess(
-    x: np.ndarray,
-    y: Optional[np.ndarray] = None,
+    data: np.ndarray,
     *,
     kernel_size: int = 3,
     sigma: float = 1.0,
-) -> ConvolvePreprossResult:
-    if y is not None:
-        assert x.shape == y.shape, "The shapes of the arrays must be the same"
+) -> ConvolvePreprocessResult: ...
+
+
+@overload
+def _convolve_preprocess(
+    data_lst: list[np.ndarray],
+    *,
+    kernel_size: int = 3,
+    sigma: float = 1.0,
+) -> ConvolvePreprocessResultList: ...
+
+
+def _convolve_preprocess(
+    data: np.ndarray = None,
+    data_lst: list[np.ndarray] = None,
+    *,
+    kernel_size: int = 3,
+    sigma: float = 1.0,
+) -> ConvolvePreprocessResult:
+    if data is not None:
+        x = data.copy()
+    elif data_lst is not None:
+        for data in data_lst:
+            assert (
+                data.ndim == data_lst[0].shape
+            ), "The shapes of the arrays must be the same"
+        x: np.ndarray = data_lst[0].copy()
+    else:
+        raise ValueError("Either data or data_lst must be provided")
     kernel = np.zeros((kernel_size,) * x.ndim)
     center = (kernel_size - 1) // 2
     kernel[(center,) * x.ndim] = 1
@@ -34,15 +68,30 @@ def _convolve_preprocess(
         data = np.pad(data, pad_width=center, mode="constant", constant_values=0)
         return data
 
-    x = process_data(x)
-    if y is not None:
-        y = process_data(y)
-    return ConvolvePreprossResult(x=x, y=y, kernel=kernel)
+    if data is not None:
+        data = process_data(data)
+        return ConvolvePreprocessResult(data=data, kernel=kernel)
+    elif data_lst is not None:
+        data_lst = [process_data(data) for data in data_lst]
+        return ConvolvePreprocessResultList(data_lst=data_lst, kernel=kernel)
 
 
 def calculate_similarity(
     x: np.ndarray, y: np.ndarray, similarity_func: Callable
 ) -> float:
+    """
+    Calculates the similarity between two arrays using a given similarity
+    function.
+
+    Args:
+        x (np.ndarray): The first input array.
+        y (np.ndarray): The second input array.
+        similarity_func (Callable): The similarity function to use.
+
+    Returns:
+        float: The similarity score calculated by the similarity function
+        between the two arrays.
+    """
     assert x.shape == y.shape, "The shapes of the arrays must be the same"
     x, y = x.copy().flatten(), y.copy().flatten()
     data = np.stack((x, y), axis=0)
@@ -52,12 +101,31 @@ def calculate_similarity(
 
 
 def do_fft(x: np.ndarray) -> np.ndarray:
+    """
+    Perform Fast Fourier Transform on the input array.
+
+    Parameters:
+        x (np.ndarray): Input array.
+
+    Returns:
+        np.ndarray: Array containing the real and imaginary parts of the
+        FFT result.
+    """
     x = np.nan_to_num(x=x, copy=True, nan=0.0)
     x = np.fft.fftshift(np.fft.fftn(x))
     return np.stack((np.real(x), np.imag(x)), axis=-1)
 
 
 def do_gradient(x: np.ndarray) -> np.ndarray:
+    """
+    Calculate the gradient of an array along each dimension.
+
+    Parameters:
+        x (np.ndarray): Input array.
+
+    Returns:
+        np.ndarray: Array containing the gradient along each dimension.
+    """
     gradient_array = np.gradient(x)
     return np.stack(gradient_array, axis=-1)
 
@@ -65,8 +133,21 @@ def do_gradient(x: np.ndarray) -> np.ndarray:
 def do_spatial_average(
     x: np.ndarray, kernel_size: int = 3, sigma: float = 1.0
 ) -> np.ndarray:
+    """
+    Perform spatial averaging on the input array.
+
+    Args:
+        x (np.ndarray): The input array.
+        kernel_size (int, optional): The size of the kernel for
+        convolution. Defaults to 3.
+        sigma (float, optional): The standard deviation of the Gaussian
+        kernel. Defaults to 1.0.
+
+    Returns:
+        np.ndarray: The result of spatial averaging.
+    """
     res = _convolve_preprocess(x, kernel_size=kernel_size, sigma=sigma)
-    return convolve(res.x, res.kernel, mode="valid")
+    return convolve(res.data, res.kernel, mode="valid")
 
 
 PreprocessResult = NamedTuple(
@@ -101,6 +182,19 @@ def pearson_correlation_coefficient(
     y: np.ndarray,
     preprocess_method: Optional[Literal["FFT", "Gradient"]] = None,
 ) -> float:
+    """
+    Calculate the Pearson correlation coefficient between two arrays.
+
+    Args:
+        x (np.ndarray): The first input array.
+        y (np.ndarray): The second input array.
+        preprocess_method (Optional[Literal["FFT", "Gradient"]], optional):
+            The preprocessing method to be applied to the flattened arrays.
+            Defaults to None.
+
+    Returns:
+        float: The Pearson correlation coefficient between the two arrays.
+    """
     x, y = _preprocess(x, y, preprocess_method)
     pearson_correlation_coefficient_func = lambda x, y: pearsonr(x, y).statistic
     return calculate_similarity(
@@ -113,6 +207,19 @@ def cosine_similarity(
     y: np.ndarray,
     preprocess_method: Optional[Literal["FFT", "Gradient"]] = None,
 ) -> float:
+    """
+    Calculate the cosine similarity between two arrays.
+
+    Args:
+        x (np.ndarray): The first vector.
+        y (np.ndarray): The second vector.
+        preprocess_method (Optional[Literal["FFT", "Gradient"]], optional):
+            The preprocessing method to be applied to the flattened
+            arrays. Defaults to None.
+
+    Returns:
+        float: The cosine similarity between the two arrays.
+    """
     x, y = _preprocess(x, y, preprocess_method)
     cosine_similarity_func = lambda x, y: 1 - ssd.cosine(x, y)
     return calculate_similarity(x=x, y=y, similarity_func=cosine_similarity_func)
@@ -123,15 +230,31 @@ def local_pearson_correlation_coefficient(
     y: np.ndarray,
     kernel_size: int = 3,
     sigma: float = 1.0,
-):
-    res = _convolve_preprocess(x, y, kernel_size=kernel_size, sigma=sigma)
+) -> np.ndarray:
+    """
+    Calculate the local Pearson correlation coefficient between two
+    arrays.
+
+    Args:
+        x (np.ndarray): The first input array.
+        y (np.ndarray): The second input array.
+        kernel_size (int, optional): The size of the kernel used for
+        convolution. Defaults to 3.
+        sigma (float, optional): The standard deviation of the Gaussian
+        kernel. Defaults to 1.0.
+
+    Returns:
+        np.ndarray: The local Pearson correlation coefficient between x and y.
+    """
+    res = _convolve_preprocess([x, y], kernel_size=kernel_size, sigma=sigma)
+    x, y = res.data_lst
 
     def get_mu(data: np.ndarray) -> np.ndarray:
         return convolve(data, res.kernel, mode="valid")
 
-    mu_x, mu_y = get_mu(res.x), get_mu(res.y)
-    var_x = get_mu(res.x**2) - mu_x**2
-    var_y = get_mu(res.y**2) - mu_y**2
-    cov_xy = get_mu(res.x * res.y) - mu_x * mu_y
+    mu_x, mu_y = get_mu(x), get_mu(y)
+    var_x = get_mu(x**2) - mu_x**2
+    var_y = get_mu(y**2) - mu_y**2
+    cov_xy = get_mu(x * y) - mu_x * mu_y
     den = np.sqrt(var_x * var_y)
-    return cov_xy / (den + np.finfo(den.dtype).eps)
+    return np.nanmean(cov_xy / (den + np.finfo(den.dtype).eps))
