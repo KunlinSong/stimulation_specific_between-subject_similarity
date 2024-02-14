@@ -60,7 +60,7 @@ class BootstrapTest:
         data: np.ndarray,
         *,
         confidence_level: Optional[float] = None,
-        confidence_levels: Optional[list[float]] = None
+        confidence_levels: Optional[list[float]] = None,
     ) -> Union[BootstrapTestResult, BootstrapTestResult]:
         """
         Perform bootstrap hypothesis testing.
@@ -77,7 +77,10 @@ class BootstrapTest:
                 the bootstrap test.
         """
         if confidence_level is not None:
-            confidence_intervals = {}
+            confidence_levels = [confidence_level]
+        confidence_intervals = {}
+        statistic = None
+        for confidence_level in confidence_levels:
             res = stats.bootstrap(
                 data=data,
                 statistic=self.statistic,
@@ -86,38 +89,15 @@ class BootstrapTest:
                 method=self.CONFIDENCE_METHOD,
                 random_state=self.RANDOM_SEED,
             )
-            statistic = np.median(res.bootstrap_distribution)
-            distribution = res.bootstrap_distribution
+            if statistic is None:
+                statistic = np.median(res.bootstrap_distribution)
+                distribution = res.bootstrap_distribution
             confidence_interval = ConfidenceInterval(
                 low=res.confidence_interval.low, high=res.confidence_interval.high
             )
-            confidence_intervals[confidence_level] = confidence_interval
-            return BootstrapTestResult(
-                statistic=statistic,
-                distribution=distribution,
-                confidence_interval=confidence_intervals,
-            )
-        elif confidence_levels is not None:
-            confidence_intervals = {}
-            statistic = None
-            for confidence_level in confidence_levels:
-                res = stats.bootstrap(
-                    data=data,
-                    statistic=self.statistic,
-                    n_resamples=self.n_resamples,
-                    confidence_level=confidence_level,
-                    method=self.CONFIDENCE_METHOD,
-                    random_state=self.RANDOM_SEED,
-                )
-                if statistic is None:
-                    statistic = np.median(res.bootstrap_distribution)
-                    distribution = res.bootstrap_distribution
-                confidence_interval = ConfidenceInterval(
-                    low=res.confidence_interval.low, high=res.confidence_interval.high
-                )
-                confidence_intervals[confidence_level] = confidence_interval
-            return BootstrapTestResult(
-                statistic=statistic,
-                distribution=distribution,
-                confidence_interval=confidence_intervals,
-            )
+            confidence_intervals[f"{confidence_level}"] = confidence_interval
+        return BootstrapTestResult(
+            statistic=statistic,
+            distribution=distribution,
+            confidence_interval=confidence_intervals,
+        )
