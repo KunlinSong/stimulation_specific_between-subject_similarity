@@ -12,12 +12,12 @@ def pca_decomposition(
 
     Args:
         data_dict (dict[str, list[np.ndarray]]): A dictionary where the
-        keys represent labels and the values are lists of numpy arrays.
+            keys represent labels and the values are lists of numpy arrays.
 
     Returns:
         dict[str, list[np.ndarray]]: A dictionary where the keys
-        represent labels and the values are lists of transformed numpy
-        arrays.
+            represent labels and the values are lists of transformed numpy
+            arrays.
 
     """
     pca = PCA(n_components=n_components)
@@ -43,12 +43,12 @@ def pca_decomposition_2d(
 
     Args:
         data_dict (dict[str, list[np.ndarray]]): A dictionary where the
-        keys represent labels and the values are lists of numpy arrays.
+            keys represent labels and the values are lists of numpy arrays.
 
     Returns:
         dict[str, list[np.ndarray]]: A dictionary where the keys
-        represent labels and the values are lists of transformed numpy
-        arrays.
+            represent labels and the values are lists of transformed numpy
+            arrays.
     """
     n_components = 2
     return pca_decomposition(data_dict, n_components)
@@ -63,12 +63,12 @@ def pca_decomposition_3d(
 
     Args:
         data_dict (dict[str, list[np.ndarray]]): A dictionary where the
-        keys represent labels and the values are lists of numpy arrays.
+            keys represent labels and the values are lists of numpy arrays.
 
     Returns:
         dict[str, list[np.ndarray]]: A dictionary where the keys
-        represent labels and the values are lists of transformed numpy
-        arrays.
+            represent labels and the values are lists of transformed numpy
+            arrays.
     """
     n_components = 3
     return pca_decomposition(data_dict, n_components)

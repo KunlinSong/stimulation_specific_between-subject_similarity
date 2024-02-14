@@ -35,13 +35,13 @@ class BootstrapTest:
 
     Args:
         statistic (Callable): The statistic to be computed on resampled
-        data. Default is np.mean.
+            data. Default is np.mean.
         n_resamples (int): The number of resamples to generate. Default
-        is 10000.
+            is 10000.
 
     Returns:
         BootstrapTestResult or BootstrapTestResults: The result of the
-        bootstrap test.
+            bootstrap test.
 
     Examples:
         >>> test = BootstrapTest()
@@ -78,13 +78,13 @@ class BootstrapTest:
         Args:
             data (np.ndarray): The input data.
             confidence_level (float, optional): The confidence level for
-            the test. Default is None.
+                the test. Default is None.
             confidence_levels (list[float], optional): The list of
-            confidence levels for the test. Default is None.
+                confidence levels for the test. Default is None.
 
         Returns:
             BootstrapTestResult or BootstrapTestResults: The result of
-            the bootstrap test.
+                the bootstrap test.
         """
         if confidence_level is not None:
             res = stats.bootstrap(

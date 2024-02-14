@@ -9,7 +9,7 @@ def extract_mean_pattern(data_lst: list[np.ndarray]) -> np.ndarray:
 
     Args:
         data_lst (list[np.ndarray]): A list of numpy arrays representing
-        the data of subjects.
+            the data of subjects.
 
     Returns:
         np.ndarray: The mean pattern of subjects.

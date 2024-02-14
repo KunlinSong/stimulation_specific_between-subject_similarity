@@ -184,7 +184,7 @@ class _Database:
 
     Attributes:
         RANDOM_SEED (int): The random seed for the random number generator
-        used to shuffle the real data to create the random data.
+            used to shuffle the real data to create the random data.
 
     Returns:
         pd.DataFrame: The database as a pandas DataFrame.
@@ -246,7 +246,7 @@ class _VisualDatabase(_Database):
 
     Attributes:
         FILENAME (str): The name of the file NIfTI file containing the
-        data.
+            data.
         STIMULATION (str): The type of stimulation for the database.
     """
 
@@ -277,7 +277,7 @@ class _VisualDatabase(_Database):
 
         Args:
             dirname (str): The directory name where the subjects' data
-            are in.
+                are in.
             subject (str): The subject for which to get the file path.
 
         Returns:
@@ -325,7 +325,7 @@ class _AuditoryDatabase(_Database):
 
         Args:
             dirname (str): The directory name where the subjects' data
-            are in.
+                are in.
             subject (str): The subject for which to get the file path.
 
         Returns:
@@ -346,7 +346,7 @@ class Dataset:
 
     Attributes:
         LOCATION_CONFIG_FILENAME (str): The filename of the location
-        configuration file.
+            configuration file.
     """
 
     LOCATION_CONFIG_FILENAME = "location.yaml"
@@ -452,9 +452,9 @@ class Dataset:
         Args:
             region (str, optional): The region name. Defaults to None.
             structure (str, optional): The structure name. Defaults to
-            None.
+                None.
             hemisphere (str, optional): The hemisphere name. Defaults to
-            None.
+                None.
 
         Returns:
             str: The region name.
@@ -487,9 +487,9 @@ class Dataset:
         Args:
             region (str, optional): The region name. Defaults to None.
             structure (str, optional): The structure name. Defaults to
-            None.
+                None.
             hemisphere (str, optional): The hemisphere name. Defaults to
-            None.
+                None.
 
         Returns:
             np.ndarray: The mask for the region.
@@ -522,9 +522,9 @@ class Dataset:
         Args:
             region (str, optional): The region name. Defaults to None.
             structure (str, optional): The structure name. Defaults to
-            None.
+                None.
             hemisphere (str, optional): The hemisphere name. Defaults to
-            None.
+                None.
 
         Returns:
             Slices: The slices for the region.
@@ -665,10 +665,10 @@ class Dataset:
 
         Args:
             subject_name (str, optional): The subject name. Defaults to
-            None.
+                None.
             data_type (str, optional): The data type. Defaults to None.
             stimulation (str, optional): The stimulation name. Defaults
-            to None.
+                to None.
             subject (str, optional): The subject name. Defaults to None.
 
         Returns:
@@ -728,16 +728,16 @@ class Dataset:
 
         Args:
             subject_name (str, optional): The subject name. Defaults to
-            None.
+                None.
             data_type (str, optional): The data type. Defaults to None.
             stimulation (str, optional): The stimulation name. Defaults
-            to None.
+                to None.
             subject (str, optional): The subject name. Defaults to None.
             region (str, optional): The region name. Defaults to None.
             structure (str, optional): The structure name. Defaults to
-            None.
+                None.
             hemisphere (str, optional): The hemisphere name. Defaults to
-            None.
+                None.
 
         Returns:
             np.ndarray: The region data.

@@ -86,11 +86,11 @@ def calculate_similarity(
     Args:
         x (np.ndarray): The first input array.
         y (np.ndarray): The second input array.
-        similarity_func (Callable): The similarity function to use.
+            similarity_func (Callable): The similarity function to use.
 
     Returns:
         float: The similarity score calculated by the similarity function
-        between the two arrays.
+            between the two arrays.
     """
     assert x.shape == y.shape, "The shapes of the arrays must be the same"
     x, y = x.copy().flatten(), y.copy().flatten()
@@ -109,7 +109,7 @@ def do_fft(x: np.ndarray) -> np.ndarray:
 
     Returns:
         np.ndarray: Array containing the real and imaginary parts of the
-        FFT result.
+            FFT result.
     """
     x = np.nan_to_num(x=x, copy=True, nan=0.0)
     x = np.fft.fftshift(np.fft.fftn(x))
@@ -139,9 +139,9 @@ def do_spatial_average(
     Args:
         x (np.ndarray): The input array.
         kernel_size (int, optional): The size of the kernel for
-        convolution. Defaults to 3.
+            convolution. Defaults to 3.
         sigma (float, optional): The standard deviation of the Gaussian
-        kernel. Defaults to 1.0.
+            kernel. Defaults to 1.0.
 
     Returns:
         np.ndarray: The result of spatial averaging.
@@ -239,9 +239,9 @@ def local_pearson_correlation_coefficient(
         x (np.ndarray): The first input array.
         y (np.ndarray): The second input array.
         kernel_size (int, optional): The size of the kernel used for
-        convolution. Defaults to 3.
+            convolution. Defaults to 3.
         sigma (float, optional): The standard deviation of the Gaussian
-        kernel. Defaults to 1.0.
+            kernel. Defaults to 1.0.
 
     Returns:
         np.ndarray: The local Pearson correlation coefficient between x and y.
