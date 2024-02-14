@@ -10,16 +10,6 @@ ConfidenceInterval = NamedTuple(
 
 
 BootstrapTestResult = NamedTuple(
-    "BootstrapTestResult",
-    [
-        ("statistic", float),
-        ("distribution", np.ndarray),
-        ("confidence_interval", ConfidenceInterval),
-    ],
-)
-
-
-BootstrapTestResults = NamedTuple(
     "BootstrapTestResultList",
     [
         ("statistic", float),
@@ -63,7 +53,7 @@ class BootstrapTest:
     @overload
     def __call__(
         self, data: np.ndarray, *, confidence_levels: list[float]
-    ) -> BootstrapTestResults: ...
+    ) -> BootstrapTestResult: ...
 
     def __call__(
         self,
@@ -71,7 +61,7 @@ class BootstrapTest:
         *,
         confidence_level: Optional[float] = None,
         confidence_levels: Optional[list[float]] = None
-    ) -> Union[BootstrapTestResult, BootstrapTestResults]:
+    ) -> Union[BootstrapTestResult, BootstrapTestResult]:
         """
         Perform bootstrap hypothesis testing.
 
@@ -87,6 +77,7 @@ class BootstrapTest:
                 the bootstrap test.
         """
         if confidence_level is not None:
+            confidence_intervals = {}
             res = stats.bootstrap(
                 data=data,
                 statistic=self.statistic,
@@ -100,10 +91,11 @@ class BootstrapTest:
             confidence_interval = ConfidenceInterval(
                 low=res.confidence_interval.low, high=res.confidence_interval.high
             )
+            confidence_intervals[confidence_level] = confidence_interval
             return BootstrapTestResult(
                 statistic=statistic,
                 distribution=distribution,
-                confidence_interval=confidence_interval,
+                confidence_interval=confidence_intervals,
             )
         elif confidence_levels is not None:
             confidence_intervals = {}
@@ -124,7 +116,7 @@ class BootstrapTest:
                     low=res.confidence_interval.low, high=res.confidence_interval.high
                 )
                 confidence_intervals[confidence_level] = confidence_interval
-            return BootstrapTestResults(
+            return BootstrapTestResult(
                 statistic=statistic,
                 distribution=distribution,
                 confidence_interval=confidence_intervals,
