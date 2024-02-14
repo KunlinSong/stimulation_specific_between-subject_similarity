@@ -14,7 +14,15 @@ __license__ = "MIT"
 import dataclasses
 import os
 import re
-from typing import Callable, Literal, NamedTuple, Optional, TypedDict, overload
+from typing import (
+    Callable,
+    Generator,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypedDict,
+    overload,
+)
 
 import nibabel as nib
 import numpy as np
@@ -110,7 +118,9 @@ class Location:
         return location_df
 
     @staticmethod
-    def _config_iterator(config: dict[str, dict]) -> CenterConfig:
+    def _config_iterator(
+        config: dict[str, dict]
+    ) -> Generator[CenterConfig, None, None]:
         """
         Iterate over the configuration dictionary and yield CenterConfig
         objects.
