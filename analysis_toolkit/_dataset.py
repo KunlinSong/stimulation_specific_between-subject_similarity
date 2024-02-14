@@ -761,6 +761,8 @@ class Dataset:
 @dataclasses.dataclass
 class SubjectSimilarityVector:
     subject_name: str
+    data_type: Literal["Random", "Real"]
+    stimulation: Literal["Auditory", "Visual"]
     structure: Literal["FFA", "STG"]
     hemisphere: Literal["L", "R"]
     subject: str
