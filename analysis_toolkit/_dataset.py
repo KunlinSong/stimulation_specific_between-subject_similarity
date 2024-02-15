@@ -29,12 +29,18 @@ import numpy as np
 import pandas as pd
 import yaml
 
+_REGION = Literal["FFA L", "FFA R", "STG L", "STG R"]
+_STRUCTURE = Literal["FFA", "STG"]
+_HEMISPHERE = Literal["L", "R"]
+_DATA_TYPE = Literal["Random", "Real"]
+_STIMULATION = Literal["Auditory", "Visual"]
+
 
 class _LocationColumnsDict(TypedDict):
     name: str
-    region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    structure: Literal["FFA", "STG"]
-    hemisphere: Literal["L", "R"]
+    region: _REGION
+    structure: _STRUCTURE
+    hemisphere: _HEMISPHERE
     center_x: int
     center_y: int
     center_z: int
@@ -48,14 +54,14 @@ class _LocationColumnsDict(TypedDict):
 CenterConfig = NamedTuple(
     "CenterConfig",
     [
-        ("structure", Literal["FFA", "STG"]),
-        ("hemisphere", Literal["L", "R"]),
+        ("structure", _STRUCTURE),
+        ("hemisphere", _HEMISPHERE),
         ("hemisphere_config", dict),
     ],
 )
 
 
-def _get_region(structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]) -> str:
+def _get_region(structure: _STRUCTURE, hemisphere: _HEMISPHERE) -> str:
     return f"{structure} {hemisphere}"
 
 
@@ -174,13 +180,13 @@ class Location:
 
 class _DatabaseColumnsDict(TypedDict):
     name: str
-    type: Literal["Random", "Real"]
-    stimulation: Literal["Auditory", "Visual"]
+    data_type: _DATA_TYPE
+    stimulation: _STIMULATION
     subject: str
     data: np.ndarray
 
 
-Data = NamedTuple("Data", [("Random", np.ndarray), ("Real", np.ndarray)])
+_Data = NamedTuple("_Data", [("Random", np.ndarray), ("Real", np.ndarray)])
 
 
 class _Database:
@@ -205,17 +211,17 @@ class _Database:
     def __new__(
         cls,
         dirname: str,
-        stimulation: Literal["Auditory", "Visual"],
+        stimulation: _STIMULATION,
         get_path_func: Callable,
     ) -> pd.DataFrame:
         visual_df = pd.DataFrame(columns=_DatabaseColumnsDict.__annotations__.keys())
         for subject in os.listdir(dirname):
             path = get_path_func(subject)
-            data: Data = cls._get_data(path)
+            data: _Data = cls._get_data(path)
             for data_type in data._fields:
                 new_row: _DatabaseColumnsDict = {
                     "name": subject,
-                    "type": data_type,
+                    "data_type": data_type,
                     "stimulation": stimulation,
                     "subject": subject,
                     "data": getattr(data, data_type),
@@ -225,7 +231,7 @@ class _Database:
         visual_df = visual_df.set_index("name")
         return visual_df
 
-    def _get_data(self, path: str) -> Data:
+    def _get_data(self, path: str) -> _Data:
         """
         Get data from a given path.
 
@@ -233,7 +239,7 @@ class _Database:
             path (str): The path to the data.
 
         Returns:
-            Data: The data object.
+            _Data: The data object.
         """
         data = nib.load(path)
         data_array_real: np.ndarray = data.get_fdata(dtype=np.float32)
@@ -244,7 +250,7 @@ class _Database:
         random_generator = np.random.default_rng(self.RANDOM_SEED)
         random_generator.shuffle(random_indices)
         data_array_random[not_nan_indices] = data_array_random[random_indices]
-        return Data(Random=data_array_random, Real=data_array_real)
+        return _Data(Random=data_array_random, Real=data_array_real)
 
 
 class _VisualDatabase(_Database):
@@ -406,9 +412,7 @@ class Dataset:
         regions = self._location_config.index.tolist()
         return sorted(regions)
 
-    def _get_region_mask(
-        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    ) -> np.ndarray:
+    def _get_region_mask(self, region: _REGION) -> np.ndarray:
         """
         Returns the mask for a specific region.
 
@@ -420,9 +424,7 @@ class Dataset:
         """
         return self._location_config.loc[region, "mask"].copy()
 
-    def _get_region_slices(
-        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    ) -> Slices:
+    def _get_region_slices(self, region: _REGION) -> Slices:
         """
         Returns the slices for a specific region.
 
@@ -439,14 +441,10 @@ class Dataset:
         )
 
     @overload
-    def _get_region(
-        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    ) -> str: ...
+    def _get_region(self, region: _REGION) -> str: ...
 
     @overload
-    def _get_region(
-        self, structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]
-    ) -> str: ...
+    def _get_region(self, structure: _STRUCTURE, hemisphere: _HEMISPHERE) -> str: ...
 
     def _get_region(
         self,
@@ -475,13 +473,11 @@ class Dataset:
             return _get_region(structure, hemisphere)
 
     @overload
-    def get_region_mask(
-        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    ) -> np.ndarray: ...
+    def get_region_mask(self, region: _REGION) -> np.ndarray: ...
 
     @overload
     def get_region_mask(
-        self, structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]
+        self, structure: _STRUCTURE, hemisphere: _HEMISPHERE
     ) -> np.ndarray: ...
 
     def get_region_mask(
@@ -510,13 +506,11 @@ class Dataset:
         return self._get_region_mask(region)
 
     @overload
-    def get_region_slices(
-        self, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    ) -> Slices: ...
+    def get_region_slices(self, region: _REGION) -> Slices: ...
 
     @overload
     def get_region_slices(
-        self, structure: Literal["FFA", "STG"], hemisphere: Literal["L", "R"]
+        self, structure: _STRUCTURE, hemisphere: _HEMISPHERE
     ) -> Slices: ...
 
     def get_region_slices(
@@ -574,7 +568,7 @@ class Dataset:
         Returns:
             list[str]: A sorted list of data types.
         """
-        data_types = self._database["type"].unique().tolist()
+        data_types = self._database["data_type"].unique().tolist()
         return sorted(data_types)
 
     @property
@@ -588,7 +582,7 @@ class Dataset:
         stimulations = self._database["stimulation"].unique().tolist()
         return sorted(stimulations)
 
-    def subjects(self, stimulation: Literal["Auditory", "Visual"]) -> list[str]:
+    def subjects(self, stimulation: _STIMULATION) -> list[str]:
         """
         Returns a sorted list of subjects for a specific stimulation.
 
@@ -607,8 +601,8 @@ class Dataset:
 
     def subject_names(
         self,
-        data_type: Literal["Random", "Real"],
-        stimulation: Literal["Auditory", "Visual"],
+        data_type: _DATA_TYPE,
+        stimulation: _STIMULATION,
     ) -> list[str]:
         """
         Returns a sorted list of subject names for a specific data type
@@ -622,15 +616,15 @@ class Dataset:
             list[str]: A sorted list of subject names.
         """
         subject_names = self._database[
-            (self._database["type"] == data_type)
+            (self._database["data_type"] == data_type)
             & (self._database["stimulation"] == stimulation)
         ].index.tolist()
         return sorted(subject_names)
 
     def get_subject_name(
         self,
-        data_type: Literal["Random", "Real"],
-        stimulation: Literal["Auditory", "Visual"],
+        data_type: _DATA_TYPE,
+        stimulation: _STIMULATION,
         subject: str,
     ) -> str:
         """
@@ -646,7 +640,7 @@ class Dataset:
             str: The subject name.
         """
         return self._database[
-            (self._database["type"] == data_type)
+            (self._database["data_type"] == data_type)
             & (self._database["stimulation"] == stimulation)
             & (self._database["subject"] == subject)
         ].index[0]
@@ -654,8 +648,8 @@ class Dataset:
     @overload
     def get_whole_brain_data(
         self,
-        data_type: Literal["Random", "Real"],
-        stimulation: Literal["Auditory", "Visual"],
+        data_type: _DATA_TYPE,
+        stimulation: _STIMULATION,
         subject: str,
     ) -> np.ndarray: ...
 
@@ -665,8 +659,8 @@ class Dataset:
     def get_whole_brain_data(
         self,
         subject_name: Optional[str] = None,
-        data_type: Optional[Literal["Random", "Real"]] = None,
-        stimulation: Optional[Literal["Auditory", "Visual"]] = None,
+        data_type: Optional[_DATA_TYPE] = None,
+        stimulation: Optional[_STIMULATION] = None,
         subject: Optional[str] = None,
     ) -> np.ndarray:
         """
@@ -691,46 +685,44 @@ class Dataset:
         return self._database.loc[subject_name, "data"].copy()
 
     @overload
-    def get_region_data(
-        self, subject_name: str, region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    ) -> np.ndarray: ...
+    def get_region_data(self, subject_name: str, region: _REGION) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
         subject_name: str,
-        structure: Literal["FFA", "STG"],
-        hemisphere: Literal["L", "R"],
+        structure: _STRUCTURE,
+        hemisphere: _HEMISPHERE,
     ) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
-        data_type: Literal["Random", "Real"],
-        stimulation: Literal["Auditory", "Visual"],
+        data_type: _DATA_TYPE,
+        stimulation: _STIMULATION,
         subject: str,
-        region: Literal["FFA L", "FFA R", "STG L", "STG R"],
+        region: _REGION,
     ) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
-        data_type: Literal["Random", "Real"],
-        stimulation: Literal["Auditory", "Visual"],
+        data_type: _DATA_TYPE,
+        stimulation: _STIMULATION,
         subject: str,
-        structure: Literal["FFA", "STG"],
-        hemisphere: Literal["L", "R"],
+        structure: _STRUCTURE,
+        hemisphere: _HEMISPHERE,
     ) -> np.ndarray: ...
 
     def get_region_data(
         self,
         subject_name: Optional[str] = None,
-        data_type: Optional[Literal["Random", "Real"]] = None,
-        stimulation: Optional[Literal["Auditory", "Visual"]] = None,
+        data_type: Optional[_DATA_TYPE] = None,
+        stimulation: Optional[_STIMULATION] = None,
         subject: Optional[str] = None,
-        region: Optional[Literal["FFA L", "FFA R", "STG L", "STG R"]] = None,
-        structure: Optional[Literal["FFA", "STG"]] = None,
-        hemisphere: Optional[Literal["L", "R"]] = None,
+        region: Optional[_REGION] = None,
+        structure: Optional[_STRUCTURE] = None,
+        hemisphere: Optional[_HEMISPHERE] = None,
     ) -> np.ndarray:
         """
         Returns the region data for a specific subject or based on the
@@ -771,10 +763,10 @@ class Dataset:
 @dataclasses.dataclass
 class SubjectSimilarityVector:
     subject_name: str
-    data_type: Literal["Random", "Real"]
-    stimulation: Literal["Auditory", "Visual"]
-    structure: Literal["FFA", "STG"]
-    hemisphere: Literal["L", "R"]
+    data_type: _DATA_TYPE
+    stimulation: _STIMULATION
+    structure: _STRUCTURE
+    hemisphere: _HEMISPHERE
     subject: str
     idx: int
     similarity_vector: np.ndarray
@@ -783,9 +775,9 @@ class SubjectSimilarityVector:
 @dataclasses.dataclass
 class SimilarityMatrix:
     matrix: np.ndarray
-    region: Literal["FFA L", "FFA R", "STG L", "STG R"]
-    structure: Literal["FFA", "STG"]
-    hemisphere: Literal["L", "R"]
+    region: _REGION
+    structure: _STRUCTURE
+    hemisphere: _HEMISPHERE
     stimulation_slices: dict[
         Literal["Random Auditory", "Random Visual", "Real Auditory", "Real Visual"],
         slice,
