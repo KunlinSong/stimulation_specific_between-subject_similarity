@@ -1,8 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Kunlin SONG"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
+__license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
+
+
 from dataclasses import dataclass
 
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+
+__all__ = ["get_optimal_n_clusters", "kmeans_clustering"]
 
 RANDOM_SEED = 42
 

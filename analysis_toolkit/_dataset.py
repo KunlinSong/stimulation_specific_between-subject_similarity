@@ -1,14 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-"""
-This file contains the implementation of the _dataset module.
-"""
-
 __author__ = "Kunlin SONG"
-__email__ = "kunlinsongcode@gmail.com"
-__version__ = "1.0.0"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
 __license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
 
 
 import dataclasses
@@ -28,6 +23,8 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import yaml
+
+__all__ = ["Dataset", "SubjectSimilarityVector", "SimilarityMatrix"]
 
 _REGION = Literal["FFA L", "FFA R", "STG L", "STG R"]
 _STRUCTURE = Literal["FFA", "STG"]

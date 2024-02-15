@@ -1,5 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Kunlin SONG"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
+__license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
+
+
 import numpy as np
 from sklearn.decomposition import PCA
+
+__all__ = ["pca_decomposition", "pca_decomposition_2d", "pca_decomposition_3d"]
 
 
 def pca_decomposition(

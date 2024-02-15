@@ -1,5 +1,11 @@
-import math
-from itertools import combinations
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Kunlin SONG"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
+__license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
+
+
 from typing import Callable, Literal, NamedTuple, Optional, Union
 
 import matplotlib.pyplot as plt
@@ -11,6 +17,15 @@ from mpl_toolkits.mplot3d import Axes3D, art3d
 from scipy.stats import chi2
 
 from ._test import ConfidenceInterval
+
+__all__ = [
+    "plot_pca_2d",
+    "plot_pca_3d",
+    "plot_similarity_heatmap",
+    "plot_distribution_barplot",
+    "plot_clustering_scores",
+    "plot_brain",
+]
 
 CMAP = "rainbow"
 HEATMAP_CMAP = "seismic"

@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Kunlin SONG"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
+__license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
+
+
 from typing import Callable, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
@@ -5,6 +13,13 @@ import scipy.spatial.distance as ssd
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve
 from scipy.stats import pearsonr
+
+__all__ = [
+    "cosine_similarity",
+    "local_pearson_correlation_coefficient",
+    "pearson_correlation_coefficient",
+]
+
 
 """
   The kernel size and sigma for spatial averaging and local pearson

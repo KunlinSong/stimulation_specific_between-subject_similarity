@@ -1,6 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Kunlin SONG"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
+__license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
+
+
 import numpy as np
 from scipy.stats import pearsonr
 from sklearn.decomposition import FastICA
+
+__all__ = [
+    "extract_mean_pattern",
+]
 
 
 def extract_mean_pattern(data_lst: list[np.ndarray]) -> np.ndarray:

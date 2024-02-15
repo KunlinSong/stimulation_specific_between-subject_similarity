@@ -1,7 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+__author__ = "Kunlin SONG"
+__copyright__ = "Copyright (c) 2024 Kunlin SONG"
+__license__ = "MIT"
+__email__ = "kunlinsongcode@gmail.com"
+
+
 from typing import Callable, Literal, NamedTuple, Optional, Union, overload
 
 import numpy as np
 from scipy import stats
+
+__all__ = ["BootstrapTest"]
+
 
 ConfidenceInterval = NamedTuple(
     "ConfidenceInterval",
