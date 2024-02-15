@@ -61,7 +61,7 @@ def _get_data_info(data_dict: dict[str, list[np.ndarray]], axis: int) -> DataInf
     min_val = np.inf
     max_val = -np.inf
     for v in data_dict.values():
-        v = np.stack(v, axis=0)
+        v = np.concatenate(v, axis=0)
         min_val = min(min_val, np.min(v[:, axis]))
         max_val = max(max_val, np.max(v[:, axis]))
     diff = max_val - min_val
@@ -87,6 +87,12 @@ def _get_ellipse(data: np.ndarray, confidence_level: float) -> Ellipse:
     angle = np.degrees(np.arctan2(*eigenvectors[:, 0][::-1]))
     width, height = 2 * np.sqrt(chi2.ppf(confidence_level, 2) * eigenvalues)
     return Ellipse(xy=np.mean(data, axis=0), width=width, height=height, angle=angle)
+
+
+def get_lim(data_info: DataInfo) -> tuple[float, float]:
+    FACTOR = 0.5
+    diff = data_info.diff * FACTOR
+    return data_info.min - diff, data_info.max + diff
 
 
 def plot_pca_2d(
@@ -120,9 +126,13 @@ def plot_pca_2d(
 
     """
     colors = plt.cm.get_cmap(CMAP, len(data_dict))
+    x_info = _get_data_info(data_dict, 0)
+    y_info = _get_data_info(data_dict, 1)
+    x_lim = get_lim(x_info)
+    y_lim = get_lim(y_info)
 
     for color_idx, (k, v) in enumerate(data_dict.items()):
-        v = np.stack(v, axis=0)
+        v = np.concatenate(v, axis=0)
         ax.scatter(v[:, 0], v[:, 1], c=colors(color_idx), label=k)
 
         if confidence_level is not None:
@@ -134,10 +144,13 @@ def plot_pca_2d(
     ax.set_title(title)
     ax.set_xlabel("PC1")
     ax.set_ylabel("PC2")
+    ax.set_xlim(x_lim)
+    ax.set_ylim(y_lim)
     if legend:
         ax.legend(**LEGEND_PARAMS)
     if not ticks:
-        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
     return ax
 
 
@@ -170,11 +183,6 @@ def plot_pca_3d(
         plt.Axes: The plotted axes object.
     """
 
-    def get_lim(data_info: DataInfo) -> tuple[float, float]:
-        FACTOR = 0.1
-        diff = data_info.diff * FACTOR
-        return data_info.min - diff, data_info.max + diff
-
     colors = plt.cm.get_cmap(CMAP, len(data_dict))
     x_info = _get_data_info(data_dict, 0)
     y_info = _get_data_info(data_dict, 1)
@@ -183,7 +191,7 @@ def plot_pca_3d(
     y_lim = get_lim(y_info)
     z_lim = get_lim(z_info)
     for color_idx, (k, v) in enumerate(data_dict.items()):
-        v = np.stack(v, axis=0)
+        v = np.concatenate(v, axis=0)
         ax.scatter(v[:, 0], v[:, 1], v[:, 2], c=colors(color_idx), label=k)
         if confidence_level is not None:
             for axis in ("x", "y", "z"):
@@ -207,7 +215,9 @@ def plot_pca_3d(
     if legend:
         ax.legend(**LEGEND_PARAMS)
     if not ticks:
-        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_zticks([])
     ax.set_title(title)
     ax.set_xlabel("PC1")
     ax.set_ylabel("PC2")
@@ -581,5 +591,6 @@ def plot_brain(
         data[roi_mask] = np.nan
         ax.imshow(data, cmap=CMAP_BASIC)
     ax.set_title(title)
-    ax.axis("off")
+    ax.set_xticks([])
+    ax.set_yticks([])
     return ax

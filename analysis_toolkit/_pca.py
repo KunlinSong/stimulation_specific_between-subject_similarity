@@ -36,10 +36,12 @@ def pca_decomposition(
         v_lst.append(np.stack(v, axis=0))
     v = np.concatenate(v_lst, axis=0)
     v = v.reshape(v.shape[0], -1)
+    not_nan_indices = ~np.any(np.isnan(v), axis=0)
+    v = v[:, not_nan_indices]
     pca.fit(v)
     new_data_dict = {}
     for k, v in data_dict.items():
-        new_data = [pca.transform(x.reshape(1, -1)) for x in v]
+        new_data = [pca.transform(x.reshape(1, -1)[:, not_nan_indices]) for x in v]
         new_data_dict[k] = new_data
     return new_data_dict
 

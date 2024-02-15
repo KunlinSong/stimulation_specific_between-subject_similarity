@@ -10,6 +10,7 @@ from . import _clustering as clustering
 from . import _dataset as dataset
 from . import _pattern_extractor as pattern_extractor
 from . import _pca as pca
+from . import _plot as plot
 from . import _similarity as similarity
 from . import _test as test
 
@@ -18,6 +19,7 @@ __all__ = [
     "dataset",
     "pattern_extractor",
     "pca",
+    "plot",
     "similarity",
     "test",
 ]

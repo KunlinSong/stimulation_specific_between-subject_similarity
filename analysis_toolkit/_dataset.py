@@ -117,6 +117,7 @@ class Location:
             }
             new_row = pd.Series(new_row).to_frame().T
             location_df = pd.concat([location_df, new_row], ignore_index=True)
+        location_df.set_index("name", inplace=True)
         return location_df
 
     @staticmethod
