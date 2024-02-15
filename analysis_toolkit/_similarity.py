@@ -41,7 +41,6 @@ ConvolvePreprocessResultList = NamedTuple(
 @overload
 def _convolve_preprocess(
     data: np.ndarray,
-    *,
     kernel_size: int = 3,
     sigma: float = 1.0,
 ) -> ConvolvePreprocessResult: ...
@@ -50,16 +49,15 @@ def _convolve_preprocess(
 @overload
 def _convolve_preprocess(
     data_lst: list[np.ndarray],
-    *,
     kernel_size: int = 3,
     sigma: float = 1.0,
 ) -> ConvolvePreprocessResultList: ...
 
 
 def _convolve_preprocess(
+    *,
     data: np.ndarray = None,
     data_lst: list[np.ndarray] = None,
-    *,
     kernel_size: int = 3,
     sigma: float = 1.0,
 ) -> ConvolvePreprocessResult:

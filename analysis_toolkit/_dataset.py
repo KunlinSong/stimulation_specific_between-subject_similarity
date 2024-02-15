@@ -117,7 +117,6 @@ class Location:
             }
             new_row = pd.Series(new_row).to_frame().T
             location_df = pd.concat([location_df, new_row], ignore_index=True)
-        location_df = location_df.set_index("name")
         return location_df
 
     @staticmethod
@@ -217,7 +216,7 @@ class _Database:
             data: _Data = cls._get_data(path)
             for data_type in data._fields:
                 new_row: _DatabaseColumnsDict = {
-                    "name": subject,
+                    "name": f"{data_type} {stimulation} {subject}",
                     "data_type": data_type,
                     "stimulation": stimulation,
                     "subject": subject,
@@ -225,10 +224,10 @@ class _Database:
                 }
                 new_row = pd.Series(new_row).to_frame().T
                 visual_df = pd.concat([visual_df, new_row], ignore_index=True)
-        visual_df = visual_df.set_index("name")
         return visual_df
 
-    def _get_data(self, path: str) -> _Data:
+    @classmethod
+    def _get_data(cls, path: str) -> _Data:
         """
         Get data from a given path.
 
@@ -239,13 +238,14 @@ class _Database:
             _Data: The data object.
         """
         data = nib.load(path)
-        data_array_real: np.ndarray = data.get_fdata(dtype=np.float32)
+        data_array_real: np.ndarray = np.array(data.get_fdata())
 
         data_array_random = data_array_real.copy()
-        not_nan_indices = np.argwhere(~np.isnan(data_array_random))
-        random_indices = not_nan_indices.copy()
-        random_generator = np.random.default_rng(self.RANDOM_SEED)
-        random_generator.shuffle(random_indices)
+        not_nan_indices = np.nonzero(~np.isnan(data_array_random))
+        random_indices = np.stack(not_nan_indices, axis=0)
+        random_generator = np.random.default_rng(cls.RANDOM_SEED)
+        random_generator.shuffle(random_indices, axis=1)
+        random_indices = tuple([indice for indice in random_indices])
         data_array_random[not_nan_indices] = data_array_random[random_indices]
         return _Data(Random=data_array_random, Real=data_array_real)
 
@@ -284,7 +284,8 @@ class _VisualDatabase(_Database):
             get_path_func=get_path_func,
         )
 
-    def _get_path(self, dirname: str, subject: str) -> str:
+    @classmethod
+    def _get_path(cls, dirname: str, subject: str) -> str:
         """
         Get the path of the file for a specific subject.
 
@@ -296,7 +297,7 @@ class _VisualDatabase(_Database):
         Returns:
             str: The path of the file for the specified subject.
         """
-        return os.path.join(dirname, subject, self.FILENAME)
+        return os.path.join(dirname, subject, cls.FILENAME)
 
 
 class _AuditoryDatabase(_Database):
@@ -332,7 +333,8 @@ class _AuditoryDatabase(_Database):
             get_path_func=get_path_func,
         )
 
-    def _get_path(self, dirname: str, subject: str) -> str:
+    @classmethod
+    def _get_path(cls, dirname: str, subject: str) -> str:
         """
         Get the path of the file for a specific subject.
 
@@ -344,7 +346,7 @@ class _AuditoryDatabase(_Database):
         Returns:
             str: The path of the file for the specified subject.
         """
-        subject_num = re.findall(self.SUBJECT_PATTERN, subject)[0]
+        subject_num = re.findall(cls.SUBJECT_PATTERN, subject)[0]
         subject_num = int(subject_num)
         filename = f"Words_{subject_num}.nii"
         return os.path.join(dirname, subject, filename)
@@ -376,7 +378,7 @@ class Dataset:
         )
         visual_db = _VisualDatabase(os.path.join(dirname, "Visual"))
         auditory_db = _AuditoryDatabase(os.path.join(dirname, "Auditory"))
-        self._database = pd.concat([visual_db, auditory_db])
+        self._database = pd.concat([visual_db, auditory_db], ignore_index=True)
 
     @property
     def location_config(self) -> pd.DataFrame:
@@ -445,6 +447,7 @@ class Dataset:
 
     def _get_region(
         self,
+        *,
         region: Optional[str] = None,
         structure: Optional[str] = None,
         hemisphere: Optional[str] = None,
@@ -479,6 +482,7 @@ class Dataset:
 
     def get_region_mask(
         self,
+        *,
         region: Optional[str] = None,
         structure: Optional[str] = None,
         hemisphere: Optional[str] = None,
@@ -512,6 +516,7 @@ class Dataset:
 
     def get_region_slices(
         self,
+        *,
         region: Optional[str] = None,
         structure: Optional[str] = None,
         hemisphere: Optional[str] = None,
@@ -584,7 +589,7 @@ class Dataset:
         Returns a sorted list of subjects for a specific stimulation.
 
         Args:
-            stimulation (str): The stimulation name.
+            stimulation (int): The stimulation name.
 
         Returns:
             list[str]: A sorted list of subjects.
@@ -596,13 +601,13 @@ class Dataset:
         )
         return sorted(subjects)
 
-    def subject_names(
+    def subject_idx_lst(
         self,
         data_type: _DATA_TYPE,
         stimulation: _STIMULATION,
-    ) -> list[str]:
+    ) -> list[int]:
         """
-        Returns a sorted list of subject names for a specific data type
+        Returns a sorted list of subject idx for a specific data type
         and stimulation.
 
         Args:
@@ -610,22 +615,22 @@ class Dataset:
             stimulation (str): The stimulation name.
 
         Returns:
-            list[str]: A sorted list of subject names.
+            list[int]: A sorted list of subject idx.
         """
-        subject_names = self._database[
+        subject_idx_lst = self._database[
             (self._database["data_type"] == data_type)
             & (self._database["stimulation"] == stimulation)
         ].index.tolist()
-        return sorted(subject_names)
+        return sorted(subject_idx_lst)
 
-    def get_subject_name(
+    def get_subject_idx(
         self,
         data_type: _DATA_TYPE,
         stimulation: _STIMULATION,
         subject: str,
-    ) -> str:
+    ) -> int:
         """
-        Returns the subject name based on the given data type,
+        Returns the subject idx based on the given data type,
         stimulation, and subject.
 
         Args:
@@ -634,7 +639,7 @@ class Dataset:
             subject (str): The subject name.
 
         Returns:
-            str: The subject name.
+            int: The subject idx.
         """
         return self._database[
             (self._database["data_type"] == data_type)
@@ -651,11 +656,12 @@ class Dataset:
     ) -> np.ndarray: ...
 
     @overload
-    def get_whole_brain_data(self, subject_name: str) -> np.ndarray: ...
+    def get_whole_brain_data(self, *, subject_idx: int) -> np.ndarray: ...
 
     def get_whole_brain_data(
         self,
-        subject_name: Optional[str] = None,
+        *,
+        subject_idx: Optional[int] = None,
         data_type: Optional[_DATA_TYPE] = None,
         stimulation: Optional[_STIMULATION] = None,
         subject: Optional[str] = None,
@@ -665,7 +671,7 @@ class Dataset:
         the given parameters.
 
         Args:
-            subject_name (str, optional): The subject name. Defaults to
+            subject_idx (int, optional): The subject idx. Defaults to
                 None.
             data_type (str, optional): The data type. Defaults to None.
             stimulation (str, optional): The stimulation name. Defaults
@@ -675,19 +681,19 @@ class Dataset:
         Returns:
             np.ndarray: The whole brain data.
         """
-        if subject_name is None:
-            subject_name = self.get_subject_name(
+        if subject_idx is None:
+            subject_idx = self.get_subject_idx(
                 data_type=data_type, stimulation=stimulation, subject=subject
             )
-        return self._database.loc[subject_name, "data"].copy()
+        return self._database.loc[subject_idx, "data"].copy()
 
     @overload
-    def get_region_data(self, subject_name: str, region: _REGION) -> np.ndarray: ...
+    def get_region_data(self, subject_idx: int, region: _REGION) -> np.ndarray: ...
 
     @overload
     def get_region_data(
         self,
-        subject_name: str,
+        subject_idx: int,
         structure: _STRUCTURE,
         hemisphere: _HEMISPHERE,
     ) -> np.ndarray: ...
@@ -713,7 +719,8 @@ class Dataset:
 
     def get_region_data(
         self,
-        subject_name: Optional[str] = None,
+        *,
+        subject_idx: Optional[int] = None,
         data_type: Optional[_DATA_TYPE] = None,
         stimulation: Optional[_STIMULATION] = None,
         subject: Optional[str] = None,
@@ -726,7 +733,7 @@ class Dataset:
         given parameters.
 
         Args:
-            subject_name (str, optional): The subject name. Defaults to
+            subject_idx (int, optional): The subject idx. Defaults to
                 None.
             data_type (str, optional): The data type. Defaults to None.
             stimulation (str, optional): The stimulation name. Defaults
@@ -746,7 +753,7 @@ class Dataset:
         )
         region_slices = self._get_region_slices(region=region)
         whole_brain_data: np.ndarray = self.get_whole_brain_data(
-            subject_name=subject_name,
+            subject_idx=subject_idx,
             data_type=data_type,
             stimulation=stimulation,
             subject=subject,
@@ -759,7 +766,7 @@ class Dataset:
 
 @dataclasses.dataclass
 class SubjectSimilarityVector:
-    subject_name: str
+    subject_idx: int
     data_type: _DATA_TYPE
     stimulation: _STIMULATION
     structure: _STRUCTURE
