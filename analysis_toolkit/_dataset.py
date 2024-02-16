@@ -804,4 +804,4 @@ class SimilarityMatrix:
         Literal["Random Auditory", "Random Visual", "Real Auditory", "Real Visual"],
         slice,
     ]
-    subject_vectors: dict[int, SubjectSimilarityVector]
+    subject_vectors: dict[int, SubjectSimilarityVector] | None = None

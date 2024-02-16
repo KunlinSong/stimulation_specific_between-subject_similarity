@@ -283,7 +283,7 @@ def plot_similarity_heatmap(
             splits.append(label_slice.stop)
         splits = list(set(splits))
         splits.remove(0)
-        splits.remove(len(similarity_matrix))
+        splits.remove(similarity_matrix.shape[1])
         labels = []
         ticks = []
         for label, label_slice in slices_dict.items():
@@ -292,11 +292,11 @@ def plot_similarity_heatmap(
         if split_x:
             for split in splits:
                 ax.axvline(split, color="black", linewidth=1)
-            ax.set_xticks(ticks, labels, rotation=90)
+            ax.set_xticks(ticks, labels, rotation=0)
         if split_y:
             for split in splits:
                 ax.axhline(split, color="black", linewidth=1)
-            ax.set_yticks(ticks, labels)
+            ax.set_yticks(ticks, labels, rotation=90)
     return ax
 
 
@@ -333,7 +333,7 @@ def _plot_distribution(
     for i, (k, v) in enumerate(distribution_dict.items()):
         color = colors(i % ncolors)
         bias = random_generator.uniform(-DIFF, DIFF, size=v.size)
-        ax.scatter(k + bias, v, color=color, s=1, alpha=0.2)
+        ax.scatter(k + bias, v, color=color, s=1, alpha=0.2, edgecolors="black")
     return ax
 
 
@@ -348,18 +348,17 @@ def _plot_confidence_interval(
         return statistic - confidence_interval.low, confidence_interval.high - statistic
 
     for k, v in confidence_interval_dict.items():
-        for confidence_level in v[1].keys():
+        sorted_levels = _get_sorted_levels(v[1].keys())
+        for confidence_level in sorted_levels:
             if confidence_level in show_confidence_interval:
                 low, high = process_confidence_interval(v[0], v[1][confidence_level])
+                color = "black"
                 match confidence_level:
                     case "*":
-                        color = "black"
                         factor = 3
                     case "**":
-                        color = "black"
                         factor = 2
                     case "***":
-                        color = "red"
                         factor = 1
                     case _:
                         raise ValueError("Invalid confidence level")
@@ -369,7 +368,7 @@ def _plot_confidence_interval(
                     v[0],
                     yerr=[[low], [high]],
                     color=color,
-                    capsize=1 * (0.618**factor),
+                    capsize=15 * (0.618**factor),
                 )
     return ax
 
@@ -397,7 +396,9 @@ def _plot_group_difference(
         else:
             sorted_levels = _get_sorted_levels(show_confidence_interval)
             maximum_level = sorted_levels[0]
-            get_group_pos = lambda idx: confidence_interval_dict[idx][1][maximum_level]
+            get_group_pos = lambda idx: confidence_interval_dict[idx][1][
+                maximum_level
+            ].high
         return get_group_pos
 
     def _get_difference_label(group_1: int, group_2: int) -> str:
@@ -438,7 +439,9 @@ def _plot_group_difference(
             ha="center",
             va="bottom",
             color="black",
+            fontsize=16,
         )
+    return ax
 
 
 def plot_distribution_barplot(
@@ -449,7 +452,7 @@ def plot_distribution_barplot(
     legend: bool = False,
     show_labels: Optional[dict[float, str]] = None,
     show_distribution: bool = False,
-    show_confidence_interval: Optional[list[float]] = None,
+    show_confidence_interval: Optional[list[str]] = None,
     show_group_difference: Optional[list[tuple[_Group1, _Group2, _ShowLevel]]] = None,
 ) -> plt.Axes:
     """
@@ -471,7 +474,7 @@ def plot_distribution_barplot(
             Defaults to None.
         show_distribution (bool, optional): Whether to show the
             distribution plot. Defaults to False.
-        show_confidence_interval (Optional[list[float]], optional): A
+        show_confidence_interval (Optional[list[str]], optional): A
             list of confidence interval levels to show.
             Defaults to None.
         show_group_difference (Optional[list[tuple[_Group1, _Group2, _ShowLevel]]], optional):
@@ -497,17 +500,17 @@ def plot_distribution_barplot(
         data_diff = max(statistic_dict.values(), key=lambda x: x[1])[1]
         confidence_interval_dict = {k: (v[1], v[3]) for k, v in data_dict.items()}
         ax = _plot_group_difference(
-            data_diff,
-            confidence_interval_dict,
-            show_confidence_interval,
-            show_group_difference,
-            ax,
+            data_diff=data_diff,
+            confidence_interval_dict=confidence_interval_dict,
+            show_confidence_interval=show_confidence_interval,
+            show_group_difference=show_group_difference,
+            ax=ax,
         )
     if show_labels is not None:
         ticks, labels = zip(*show_labels.items())
         ax.set_xticks(ticks, labels)
     if legend:
-        ax.legend(bars, **LEGEND_PARAMS)
+        ax.legend(handles=bars, **LEGEND_PARAMS)
     ax.set_title(title)
     return ax
 

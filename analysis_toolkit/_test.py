@@ -25,7 +25,7 @@ BootstrapTestResult = NamedTuple(
     [
         ("statistic", float),
         ("distribution", np.ndarray),
-        ("confidence_interval", dict[float, ConfidenceInterval]),
+        ("confidence_interval", dict[Literal["*", "**", "***"], ConfidenceInterval]),
     ],
 )
 
