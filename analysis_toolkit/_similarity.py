@@ -60,13 +60,13 @@ def _convolve_preprocess(
     data_lst: list[np.ndarray] = None,
     kernel_size: int = 3,
     sigma: float = 1.0,
-) -> ConvolvePreprocessResult:
-    if data is not None:
+) -> Union[ConvolvePreprocessResult, ConvolvePreprocessResultList]:
+    if output_res := (data is not None):
         x = data.copy()
-    elif data_lst is not None:
+    elif output_res_lst := (data_lst is not None):
         for data in data_lst:
             assert (
-                data.ndim == data_lst[0].shape
+                data.shape == data_lst[0].shape
             ), "The shapes of the arrays must be the same"
         x: np.ndarray = data_lst[0].copy()
     else:
@@ -81,10 +81,10 @@ def _convolve_preprocess(
         data = np.pad(data, pad_width=center, mode="constant", constant_values=0)
         return data
 
-    if data is not None:
+    if output_res:
         data = process_data(data)
         return ConvolvePreprocessResult(data=data, kernel=kernel)
-    elif data_lst is not None:
+    elif output_res_lst:
         data_lst = [process_data(data) for data in data_lst]
         return ConvolvePreprocessResultList(data_lst=data_lst, kernel=kernel)
 
@@ -159,7 +159,7 @@ def do_spatial_average(
     Returns:
         np.ndarray: The result of spatial averaging.
     """
-    res = _convolve_preprocess(x, kernel_size=kernel_size, sigma=sigma)
+    res = _convolve_preprocess(data=x, kernel_size=kernel_size, sigma=sigma)
     return convolve(res.data, res.kernel, mode="valid")
 
 
@@ -193,7 +193,7 @@ def _preprocess(
 def pearson_correlation_coefficient(
     x: np.ndarray,
     y: np.ndarray,
-    preprocess_method: Optional[Literal["FFT", "Gradient"]] = None,
+    preprocess_method: Optional[Literal["FFT", "Gradient", "Spatial Average"]] = None,
 ) -> float:
     """
     Calculate the Pearson correlation coefficient between two arrays.
@@ -218,7 +218,7 @@ def pearson_correlation_coefficient(
 def cosine_similarity(
     x: np.ndarray,
     y: np.ndarray,
-    preprocess_method: Optional[Literal["FFT", "Gradient"]] = None,
+    preprocess_method: Optional[Literal["FFT", "Gradient", "Spatial Average"]] = None,
 ) -> float:
     """
     Calculate the cosine similarity between two arrays.
@@ -259,7 +259,7 @@ def local_pearson_correlation_coefficient(
     Returns:
         np.ndarray: The local Pearson correlation coefficient between x and y.
     """
-    res = _convolve_preprocess([x, y], kernel_size=kernel_size, sigma=sigma)
+    res = _convolve_preprocess(data_lst=[x, y], kernel_size=kernel_size, sigma=sigma)
     x, y = res.data_lst
 
     def get_mu(data: np.ndarray) -> np.ndarray:

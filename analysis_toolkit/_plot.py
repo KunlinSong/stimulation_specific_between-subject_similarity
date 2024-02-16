@@ -292,7 +292,7 @@ def plot_similarity_heatmap(
         if split_x:
             for split in splits:
                 ax.axvline(split, color="black", linewidth=1)
-            ax.set_xticks(ticks, labels)
+            ax.set_xticks(ticks, labels, rotation=90)
         if split_y:
             for split in splits:
                 ax.axhline(split, color="black", linewidth=1)
