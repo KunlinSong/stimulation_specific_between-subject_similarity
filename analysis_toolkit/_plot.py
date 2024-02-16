@@ -90,7 +90,7 @@ def _get_ellipse(data: np.ndarray, confidence_level: float) -> Ellipse:
 
 
 def get_lim(data_info: DataInfo) -> tuple[float, float]:
-    FACTOR = 0.5
+    FACTOR = 0.618
     diff = data_info.diff * FACTOR
     return data_info.min - diff, data_info.max + diff
 
@@ -182,7 +182,6 @@ def plot_pca_3d(
     Returns:
         plt.Axes: The plotted axes object.
     """
-
     colors = plt.cm.get_cmap(CMAP, len(data_dict))
     x_info = _get_data_info(data_dict, 0)
     y_info = _get_data_info(data_dict, 1)
@@ -215,9 +214,15 @@ def plot_pca_3d(
     if legend:
         ax.legend(**LEGEND_PARAMS)
     if not ticks:
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
+        ax.set_xticklabels(
+            ["" for _ in range(len(ax.get_xticks()))],
+        )
+        ax.set_yticklabels(
+            ["" for _ in range(len(ax.get_yticks()))],
+        )
+        ax.set_zticklabels(
+            ["" for _ in range(len(ax.get_zticks()))],
+        )
     ax.set_title(title)
     ax.set_xlabel("PC1")
     ax.set_ylabel("PC2")
@@ -570,7 +575,12 @@ def plot_brain(
         "Red-Black-Blue", ["lightsteelblue", "blue", "black", "red", "lightcoral"]
     )
     CMAP_BASIC = "gray"
+    PERCENTILE = 99.9
     assert data.ndim == 3, "The input data must be 3D"
+    persentile_high = np.nanpercentile(data, PERCENTILE)
+    persentile_low = np.nanpercentile(data, 100 - PERCENTILE)
+    v_lim = max(abs(persentile_low), abs(persentile_high))
+    v_kwargs = {"vmin": -v_lim, "vmax": v_lim}
     match axis:
         case "x":
             data = data[idx, :, :].copy()
@@ -586,11 +596,10 @@ def plot_brain(
                 roi_mask = roi_mask[:, :, idx].copy()
         case _:
             raise ValueError("Invalid axis")
-    ax.imshow(data, cmap=CMAP_ROI)
+    ax.imshow(data, cmap=CMAP_ROI, **v_kwargs)
     if roi_mask is not None:
         data[roi_mask] = np.nan
-        ax.imshow(data, cmap=CMAP_BASIC)
+        ax.imshow(data, cmap=CMAP_BASIC, **v_kwargs)
     ax.set_title(title)
-    ax.set_xticks([])
-    ax.set_yticks([])
+    ax.axis("off")
     return ax
