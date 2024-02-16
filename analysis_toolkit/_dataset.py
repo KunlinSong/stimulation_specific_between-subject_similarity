@@ -24,7 +24,14 @@ import numpy as np
 import pandas as pd
 import yaml
 
-__all__ = ["Dataset", "SubjectSimilarityVector", "SimilarityMatrix"]
+__all__ = [
+    "Dataset",
+    "SubjectSimilarityVector",
+    "SimilarityMatrix",
+    "get_region",
+    "get_structure",
+    "get_hemisphere",
+]
 
 _REGION = Literal["FFA L", "FFA R", "STG L", "STG R"]
 _STRUCTURE = Literal["FFA", "STG"]
@@ -58,8 +65,16 @@ CenterConfig = NamedTuple(
 )
 
 
-def _get_region(structure: _STRUCTURE, hemisphere: _HEMISPHERE) -> str:
+def get_region(structure: _STRUCTURE, hemisphere: _HEMISPHERE) -> _REGION:
     return f"{structure} {hemisphere}"
+
+
+def get_structure(region: _REGION) -> _STRUCTURE:
+    return region.split()[0]
+
+
+def get_hemisphere(region: _REGION) -> _HEMISPHERE:
+    return region.split()[1]
 
 
 class Location:
@@ -92,7 +107,7 @@ class Location:
         for structure, hemisphere, hemisphere_config in cls._config_iterator(
             center_config
         ):
-            region = _get_region(structure, hemisphere)
+            region = get_region(structure, hemisphere)
             center_x = hemisphere_config["x"]
             center_y = hemisphere_config["y"]
             center_z = hemisphere_config["z"]
@@ -212,7 +227,9 @@ class _Database:
         get_path_func: Callable,
     ) -> pd.DataFrame:
         visual_df = pd.DataFrame(columns=_DatabaseColumnsDict.__annotations__.keys())
-        for subject in os.listdir(dirname):
+        subject_lst = os.listdir(dirname)
+        subject_lst = sorted(subject_lst, key=lambda x: int(re.findall(r"\d+$", x)[0]))
+        for subject in subject_lst:
             path = get_path_func(subject)
             data: _Data = cls._get_data(path)
             for data_type in data._fields:
@@ -471,7 +488,7 @@ class Dataset:
         if region is not None:
             return region
         else:
-            return _get_region(structure, hemisphere)
+            return get_region(structure, hemisphere)
 
     @overload
     def get_region_mask(self, region: _REGION) -> np.ndarray: ...
