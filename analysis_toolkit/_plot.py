@@ -418,14 +418,15 @@ def _plot_group_difference(
 
     get_group_pos = _get_group_pos_function()
     for group_1, group_2, show_level in show_group_difference:
-        pos_1 = get_group_pos(group_1) + diff
-        pos_2 = get_group_pos(group_2) + diff
+        pos_1 = max(get_group_pos(group_1), 0) + diff
+        pos_2 = max(get_group_pos(group_2), 0) + diff
         group_inside_lst = [
             group
             for group in confidence_interval_dict.keys()
             if group_1 <= group <= group_2
         ]
         group_positions = [get_group_pos(group) for group in group_inside_lst]
+        group_positions.append(0)
         pos_top = max(group_positions) + diff + level_diff * show_level
         ax.plot(
             [group_1, group_1, group_2, group_2],
