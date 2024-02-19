@@ -16,7 +16,6 @@ from scipy.stats import pearsonr
 
 __all__ = [
     "cosine_similarity",
-    "local_pearson_correlation_coefficient",
     "pearson_correlation_coefficient",
 ]
 
@@ -140,6 +139,7 @@ def do_gradient(x: np.ndarray) -> np.ndarray:
         np.ndarray: Array containing the gradient along each dimension.
     """
     gradient_array = np.gradient(x)
+    gradient_array.append(x)
     return np.stack(gradient_array, axis=-1)
 
 
@@ -236,38 +236,3 @@ def cosine_similarity(
     x, y = _preprocess(x, y, preprocess_method)
     cosine_similarity_func = lambda x, y: 1 - ssd.cosine(x, y)
     return calculate_similarity(x=x, y=y, similarity_func=cosine_similarity_func)
-
-
-def local_pearson_correlation_coefficient(
-    x: np.ndarray,
-    y: np.ndarray,
-    kernel_size: int = 3,
-    sigma: float = 1.0,
-) -> np.ndarray:
-    """
-    Calculate the local Pearson correlation coefficient between two
-    arrays.
-
-    Args:
-        x (np.ndarray): The first input array.
-        y (np.ndarray): The second input array.
-        kernel_size (int, optional): The size of the kernel used for
-            convolution. Defaults to 3.
-        sigma (float, optional): The standard deviation of the Gaussian
-            kernel. Defaults to 1.0.
-
-    Returns:
-        np.ndarray: The local Pearson correlation coefficient between x and y.
-    """
-    res = _convolve_preprocess(data_lst=[x, y], kernel_size=kernel_size, sigma=sigma)
-    x, y = res.data_lst
-
-    def get_mu(data: np.ndarray) -> np.ndarray:
-        return convolve(data, res.kernel, mode="valid")
-
-    mu_x, mu_y = get_mu(x), get_mu(y)
-    var_x = get_mu(x**2) - mu_x**2
-    var_y = get_mu(y**2) - mu_y**2
-    cov_xy = get_mu(x * y) - mu_x * mu_y
-    den = np.sqrt(var_x * var_y)
-    return np.nanmean(cov_xy / (den + np.finfo(den.dtype).eps))
