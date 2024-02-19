@@ -161,7 +161,7 @@ def plot_pca_3d(
     confidence_level: Optional[float] = None,
     legend: bool = False,
     ticks: bool = False,
-) -> plt.Axes:
+) -> Axes3D:
     """
     Plot a 3D scatter plot of PCA data.
 
