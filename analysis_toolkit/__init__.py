@@ -11,8 +11,8 @@ from . import _dataset as dataset
 from . import _pattern_extractor as pattern_extractor
 from . import _pca as pca
 from . import _plot as plot
-from . import _similarity as similarity
 from . import _test as test
+from ._toolkit import _similarity as similarity
 
 __all__ = [
     "clustering",

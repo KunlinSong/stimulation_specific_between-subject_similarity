@@ -27,6 +27,12 @@ from scipy.signal import convolve
 
 from ._types import Literal
 
+__all__ = [
+    "calculate_gradient",
+    "fft",
+    "spatial_average",
+]
+
 
 def fft(
     data: np.ndarray,

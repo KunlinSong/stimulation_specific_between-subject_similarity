@@ -43,7 +43,9 @@ DataInfo = NamedTuple(
 )
 
 
-def _get_data_info(data_dict: dict[str, list[np.ndarray]], axis: int) -> DataInfo:
+def _get_data_info(
+    data_dict: dict[str, list[np.ndarray]], axis: int
+) -> DataInfo:
     """
     Get the minimum, maximum, and difference between the maximum and
     minimum values of the data along the specified axis.
@@ -86,7 +88,9 @@ def _get_ellipse(data: np.ndarray, confidence_level: float) -> Ellipse:
     eigenvectors = eigenvectors[:, order]
     angle = np.degrees(np.arctan2(*eigenvectors[:, 0][::-1]))
     width, height = 2 * np.sqrt(chi2.ppf(confidence_level, 2) * eigenvalues)
-    return Ellipse(xy=np.mean(data, axis=0), width=width, height=height, angle=angle)
+    return Ellipse(
+        xy=np.mean(data, axis=0), width=width, height=height, angle=angle
+    )
 
 
 def get_lim(data_info: DataInfo) -> tuple[float, float]:
@@ -303,7 +307,9 @@ def plot_similarity_heatmap(
 _Label = str
 _Statistic = float
 _Distribution = Optional[np.ndarray]
-_ConfidenceInterval = Optional[dict[Literal["*", "**", "***"], ConfidenceInterval]]
+_ConfidenceInterval = Optional[
+    dict[Literal["*", "**", "***"], ConfidenceInterval]
+]
 
 _ShowLevel = int
 _Group1 = int
@@ -311,7 +317,9 @@ _Group2 = int
 
 
 def _plot_bar(
-    statistic_dict: dict[int, tuple[_Label, _Statistic]], ax: plt.Axes, ncolors: int
+    statistic_dict: dict[int, tuple[_Label, _Statistic]],
+    ax: plt.Axes,
+    ncolors: int,
 ) -> tuple[plt.Axes, list]:
     colors = plt.cm.get_cmap(CMAP, ncolors)
     bars = []
@@ -333,25 +341,34 @@ def _plot_distribution(
     for i, (k, v) in enumerate(distribution_dict.items()):
         color = colors(i % ncolors)
         bias = random_generator.uniform(-DIFF, DIFF, size=v.size)
-        ax.scatter(k + bias, v, color=color, s=1, alpha=0.2, edgecolors="black")
+        ax.scatter(
+            k + bias, v, color=color, s=1, alpha=0.2, edgecolors="black"
+        )
     return ax
 
 
 def _plot_confidence_interval(
-    confidence_interval_dict: dict[int, tuple[_Statistic, _ConfidenceInterval]],
+    confidence_interval_dict: dict[
+        int, tuple[_Statistic, _ConfidenceInterval]
+    ],
     ax: plt.Axes,
     show_confidence_interval: list[Literal["*", "**", "***"]],
 ) -> plt.Axes:
     def process_confidence_interval(
         statistic: float, confidence_interval: ConfidenceInterval
     ) -> tuple[float, float]:
-        return statistic - confidence_interval.low, confidence_interval.high - statistic
+        return (
+            statistic - confidence_interval.low,
+            confidence_interval.high - statistic,
+        )
 
     for k, v in confidence_interval_dict.items():
         sorted_levels = _get_sorted_levels(v[1].keys())
         for confidence_level in sorted_levels:
             if confidence_level in show_confidence_interval:
-                low, high = process_confidence_interval(v[0], v[1][confidence_level])
+                low, high = process_confidence_interval(
+                    v[0], v[1][confidence_level]
+                )
                 color = "black"
                 match confidence_level:
                     case "*":
@@ -376,13 +393,17 @@ def _plot_confidence_interval(
 def _get_sorted_levels(
     confidence_levels: list[Literal["*", "**", "***"]]
 ) -> list[Literal["*", "**", "***"]]:
-    sorted_levels = sorted(confidence_levels, key=lambda x: x.count("*"), reverse=True)
+    sorted_levels = sorted(
+        confidence_levels, key=lambda x: x.count("*"), reverse=True
+    )
     return sorted_levels
 
 
 def _plot_group_difference(
     data_diff: float,
-    confidence_interval_dict: dict[int, tuple[_Statistic, _ConfidenceInterval]],
+    confidence_interval_dict: dict[
+        int, tuple[_Statistic, _ConfidenceInterval]
+    ],
     show_confidence_interval: Optional[list[Literal["*", "**", "***"]]],
     show_group_difference: list[tuple[_Group1, _Group2, _ShowLevel]],
     ax: plt.Axes,
@@ -446,7 +467,9 @@ def _plot_group_difference(
 
 
 def plot_distribution_barplot(
-    data_dict: dict[int, tuple[_Label, _Statistic, _Distribution, _ConfidenceInterval]],
+    data_dict: dict[
+        int, tuple[_Label, _Statistic, _Distribution, _ConfidenceInterval]
+    ],
     ncolors: int,
     title: str,
     ax: plt.Axes,
@@ -454,7 +477,9 @@ def plot_distribution_barplot(
     show_labels: Optional[dict[float, str]] = None,
     show_distribution: bool = False,
     show_confidence_interval: Optional[list[str]] = None,
-    show_group_difference: Optional[list[tuple[_Group1, _Group2, _ShowLevel]]] = None,
+    show_group_difference: Optional[
+        list[tuple[_Group1, _Group2, _ShowLevel]]
+    ] = None,
 ) -> plt.Axes:
     """
     Plot a distribution barplot.
@@ -493,13 +518,17 @@ def plot_distribution_barplot(
         distribution_dict = {k: v[2] for k, v in data_dict.items()}
         ax = _plot_distribution(distribution_dict, ax, ncolors)
     if show_confidence_interval is not None:
-        confidence_interval_dict = {k: (v[1], v[3]) for k, v in data_dict.items()}
+        confidence_interval_dict = {
+            k: (v[1], v[3]) for k, v in data_dict.items()
+        }
         ax = _plot_confidence_interval(
             confidence_interval_dict, ax, show_confidence_interval
         )
     if show_group_difference is not None:
         data_diff = max(statistic_dict.values(), key=lambda x: x[1])[1]
-        confidence_interval_dict = {k: (v[1], v[3]) for k, v in data_dict.items()}
+        confidence_interval_dict = {
+            k: (v[1], v[3]) for k, v in data_dict.items()
+        }
         ax = _plot_group_difference(
             data_diff=data_diff,
             confidence_interval_dict=confidence_interval_dict,
@@ -576,7 +605,8 @@ def plot_brain(
         plt.Axes: The matplotlib Axes object with the plotted image.
     """
     CMAP_ROI = LinearSegmentedColormap.from_list(
-        "Red-Black-Blue", ["lightsteelblue", "blue", "black", "red", "lightcoral"]
+        "Red-Black-Blue",
+        ["lightsteelblue", "blue", "black", "red", "lightcoral"],
     )
     CMAP_BASIC = "gray"
     PERCENTILE = 99.9

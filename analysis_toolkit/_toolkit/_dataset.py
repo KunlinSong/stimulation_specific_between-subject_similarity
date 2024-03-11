@@ -23,16 +23,10 @@
 
 
 import os
-import random
-import re
-from operator import not_
 
-import nibabel as nib
 import numpy as np
 import pandas as pd
-from cycler import V
 from nibabel.loadsave import load as nib_load
-from torch import Generator
 
 from ._types import Any, _Stimulation
 
@@ -177,7 +171,7 @@ class RandomDatabase:
 
     @staticmethod
     def _shuffle_indices(
-        indices: tuple[np.ndarray, ...], random_generator: np.random.Generator
+        indices: tuple[np.ndarray], random_generator: np.random.Generator
     ) -> tuple[np.ndarray]:
         random_indices = np.stack(indices, axis=0)
         random_generator.shuffle(random_indices, axis=1)
