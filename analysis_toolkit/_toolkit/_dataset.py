@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 from nibabel.loadsave import load as nib_load
 
-from ._types import Any, _Stimulation
+from ._types import Any, Stimulation
 
 __all__ = [
     "Database",
@@ -49,7 +49,7 @@ class _RealSubjectData:
     def __new__(
         cls,
         path: str,
-        stimulation: _Stimulation,
+        stimulation: Stimulation,
         subject: str | None = None,
     ) -> pd.DataFrame:
         """Create a pandas DataFrame from a path.
@@ -185,7 +185,7 @@ class Database:
     def __new__(
         cls,
         path_lst: list[str],
-        stimulation: _Stimulation,
+        stimulation: Stimulation,
         gen_random: bool = True,
     ) -> pd.DataFrame:
         """Create a pandas DataFrame from a list of paths.
