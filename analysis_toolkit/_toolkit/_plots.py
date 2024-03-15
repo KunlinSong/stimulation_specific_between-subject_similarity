@@ -36,9 +36,7 @@ from ._types import (
     AnnotationText,
     BootstrapTestResult,
     ConfidenceInterval,
-    ConfidenceIntervalDict,
     EllipseParams,
-    Optional,
     StarMap,
     StarsMapping,
 )
@@ -136,8 +134,12 @@ def annotate_test(
     stars_mapping = sorted(stars_mapping, reverse=True)
     text = "NS"
     for star_map in stars_mapping:
-        star_res_1: ConfidenceInterval = getattr(res_1, star_map.name)
-        star_res_2: ConfidenceInterval = getattr(res_2, star_map.name)
+        star_res_1: ConfidenceInterval = getattr(
+            res_1.confidence_intervals, star_map.name
+        )
+        star_res_2: ConfidenceInterval = getattr(
+            res_2.confidence_intervals, star_map.name
+        )
         if star_res_1.low > star_res_2.high:
             text = star_map.text
             break
