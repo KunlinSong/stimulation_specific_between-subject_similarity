@@ -21,30 +21,33 @@
 # SOFTWARE.
 """A toolkit for plotting."""
 
-from cgitb import text
 from dataclasses import fields
-from itertools import starmap
 from statistics import mean
 
 import numpy as np
 from scipy.stats import chi2
 from sklearn.preprocessing import minmax_scale
 
-from ._types import (
-    Annotation,
-    AnnotationLine,
-    AnnotationText,
-    BootstrapTestResult,
-    ConfidenceInterval,
-    EllipseParams,
-    StarMap,
-    StarsMapping,
+from analysis_toolkit.basic_toolkit.types import (
+    _Annotation,
+    _AnnotationLine,
+    _AnnotationText,
+    _BootstrapTestResult,
+    _ConfidenceInterval,
+    _EllipseParams,
+    _StarMap,
+    _StarsMapping,
 )
+
+__all__ = [
+    "confidence_ellipse",
+    "min_max_scale",
+]
 
 
 def confidence_ellipse(
     x: np.ndarray, y: np.ndarray, confidence_level: float = 0.95
-) -> EllipseParams:
+) -> _EllipseParams:
     """Computes the confidence ellipse of the data.
 
     We use the chi-squared distribution to compute the confidence ellipse
@@ -69,7 +72,7 @@ def confidence_ellipse(
     eigenvectors = eigenvectors[:, order]
     angle = np.degrees(np.arctan2(*eigenvectors[:, 0][::-1]))
     width, height = 2 * np.sqrt(chi2_value * eigenvalues)
-    return EllipseParams(
+    return _EllipseParams(
         x=x.mean(),
         y=y.mean(),
         width=width,
@@ -78,7 +81,7 @@ def confidence_ellipse(
     )
 
 
-def pca_min_max_scale(
+def min_max_scale(
     data: np.ndarray, feature_range: tuple[float, float] = (-1.0, 1.0)
 ) -> np.ndarray:
     """Scales the data using min-max scaling.
@@ -95,11 +98,11 @@ def pca_min_max_scale(
 
 def annotate_test(
     x: list[float, float],
-    test_results: list[BootstrapTestResult, BootstrapTestResult],
+    test_results: list[_BootstrapTestResult, _BootstrapTestResult],
     inner_maximal_y: float,
     offset: float = 0.05,
     line_height: float = 0.01,
-) -> Annotation:
+) -> _Annotation:
     """Annotates the test results.
 
     We use the stars mapping to annotate the test results.  The stars of
@@ -128,16 +131,16 @@ def annotate_test(
     line_y = [line_start_y, text_y, text_y, line_start_y]
 
     res_1, res_2 = test_results
-    stars_mapping: list[StarMap] = [
-        getattr(StarsMapping(), field.name) for field in fields(StarsMapping)
+    stars_mapping: list[_StarMap] = [
+        getattr(_StarsMapping(), field.name) for field in fields(_StarsMapping)
     ]
     stars_mapping = sorted(stars_mapping, reverse=True)
     text = "NS"
     for star_map in stars_mapping:
-        star_res_1: ConfidenceInterval = getattr(
+        star_res_1: _ConfidenceInterval = getattr(
             res_1.confidence_intervals, star_map.name
         )
-        star_res_2: ConfidenceInterval = getattr(
+        star_res_2: _ConfidenceInterval = getattr(
             res_2.confidence_intervals, star_map.name
         )
         if star_res_1.low > star_res_2.high:
@@ -146,7 +149,7 @@ def annotate_test(
         if star_res_2.low > star_res_1.high:
             text = star_map.text
             break
-    return Annotation(
-        line=AnnotationLine(x=line_x, y=line_y),
-        text=AnnotationText(x=text_x, y=text_y, text=text),
+    return _Annotation(
+        line=_AnnotationLine(x=line_x, y=line_y),
+        text=_AnnotationText(x=text_x, y=text_y, text=text),
     )

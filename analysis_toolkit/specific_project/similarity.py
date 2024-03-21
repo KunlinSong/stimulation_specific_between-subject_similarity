@@ -26,14 +26,14 @@ from functools import partial
 
 import numpy as np
 
-from analysis_toolkit.types import (
+from analysis_toolkit.basic_toolkit.types import (
     _FFTKwargs,
     _GradientKwargs,
     _PreprocessMethod,
     _SpatialAverageKwargs,
 )
 
-from . import _toolkit as toolkit
+from . import toolkit as toolkit
 
 
 def _preprocess_data(

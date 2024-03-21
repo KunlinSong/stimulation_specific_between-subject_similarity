@@ -25,12 +25,14 @@
 import numpy as np
 from scipy import stats
 
-from ._types import (
-    BootstrapTestResult,
+from analysis_toolkit.basic_toolkit.types import (
     Callable,
-    ConfidenceInterval,
-    ConfidenceIntervalDict,
+    _BootstrapTestResult,
+    _ConfidenceInterval,
+    _ConfidenceIntervalDict,
 )
+
+__all__ = ["BootstrapTest"]
 
 
 class BootstrapTest:
@@ -59,7 +61,7 @@ class BootstrapTest:
         self.statistic = statistic
         self.n_resamples = n_resamples
 
-    def __call__(self, data: np.ndarray) -> BootstrapTestResult:
+    def __call__(self, data: np.ndarray) -> _BootstrapTestResult:
         """Performs the bootstrap test on the data.
 
         Args:
@@ -84,13 +86,13 @@ class BootstrapTest:
             if idx == 0:
                 statistics = np.median(res[1])
                 distribution = res[1]
-            confidence_interval_dict[idx] = ConfidenceInterval(
+            confidence_interval_dict[idx] = _ConfidenceInterval(
                 low=res[0][0], high=res[0][1]
             )
-        return BootstrapTestResult(
+        return _BootstrapTestResult(
             statistic=statistics,
             distribution=distribution,
-            confidence_intervals=ConfidenceIntervalDict(
+            confidence_intervals=_ConfidenceIntervalDict(
                 one_star=confidence_interval_dict[0],
                 two_stars=confidence_interval_dict[1],
                 three_stars=confidence_interval_dict[2],

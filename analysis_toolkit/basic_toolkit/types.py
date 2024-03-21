@@ -37,11 +37,14 @@ from typing import (
 
 import numpy as np
 
-Stimulation = Literal["Auditory", "Visual"]
+__all__ = []
+
+
+_Stimulation = str
 
 
 @dataclass
-class ConfidenceInterval:
+class _ConfidenceInterval:
     """A dataclass for confidence interval.
 
     Attributes:
@@ -54,7 +57,7 @@ class ConfidenceInterval:
 
 
 @dataclass
-class StarMap:
+class _StarMap:
     """A dataclass for the mapping of stars.
 
     Attributes:
@@ -70,12 +73,12 @@ class StarMap:
     text: str
     confidence_level: str
 
-    def __lt__(self, other: "StarMap") -> bool:
+    def __lt__(self, other: "_StarMap") -> bool:
         return self.level < other.level
 
 
 @dataclass
-class StarsMapping:
+class _StarsMapping:
     """A dataclass for the mapping of stars.
 
     Attributes:
@@ -85,14 +88,22 @@ class StarsMapping:
         four_stars: The mapping for confidence level 0.9999.
     """
 
-    one_star = StarMap(level=1, text="*", confidence_level="0.95")
-    two_stars = StarMap(level=2, text="**", confidence_level="0.99")
-    three_stars = StarMap(level=3, text="***", confidence_level="0.999")
-    four_stars = StarMap(level=4, text="****", confidence_level="0.9999")
+    one_star = _StarMap(
+        name="one_star", level=1, text="*", confidence_level="0.95"
+    )
+    two_stars = _StarMap(
+        name="two_stars", level=2, text="**", confidence_level="0.99"
+    )
+    three_stars = _StarMap(
+        name="three_stars", level=3, text="***", confidence_level="0.999"
+    )
+    four_stars = _StarMap(
+        name="four_stars", level=4, text="****", confidence_level="0.9999"
+    )
 
 
 @dataclass
-class ConfidenceIntervalDict:
+class _ConfidenceIntervalDict:
     """A dataclass for confidence interval dictionary.
 
     We use n_stars as the key for the confidence interval.
@@ -108,15 +119,15 @@ class ConfidenceIntervalDict:
             is 0.9999.
     """
 
-    one_star: ConfidenceInterval
-    two_stars: ConfidenceInterval
-    three_stars: ConfidenceInterval
-    four_stars: ConfidenceInterval
-    _stars_mapping = StarsMapping()
+    one_star: _ConfidenceInterval
+    two_stars: _ConfidenceInterval
+    three_stars: _ConfidenceInterval
+    four_stars: _ConfidenceInterval
+    _stars_mapping = _StarsMapping()
 
 
 @dataclass
-class BootstrapTestResult:
+class _BootstrapTestResult:
     """A dataclass for the result of bootstrap testing.
 
     Attributes:
@@ -127,11 +138,11 @@ class BootstrapTestResult:
 
     statistic: float
     distribution: np.ndarray
-    confidence_intervals: ConfidenceIntervalDict
+    confidence_intervals: _ConfidenceIntervalDict
 
 
 @dataclass
-class KMeansScores:
+class _KMeansScores:
     """A dataclass for the scores of k-means clustering.
 
     Attributes:
@@ -144,7 +155,7 @@ class KMeansScores:
 
 
 @dataclass
-class KMeansResult:
+class _KMeansResult:
     """A dataclass for the result of k-means clustering.
 
     Attributes:
@@ -157,11 +168,11 @@ class KMeansResult:
     n_clusters: int
     labels: np.ndarray
     centers: np.ndarray
-    scores: KMeansScores
+    scores: _KMeansScores
 
 
 @dataclass
-class EllipseParams:
+class _EllipseParams:
     """A dataclass for the parameters of an ellipse.
 
     Attributes:
@@ -180,7 +191,7 @@ class EllipseParams:
 
 
 @dataclass
-class AnnotationLine:
+class _AnnotationLine:
     """A dataclass for the line of testing annotation.
 
     Attributes:
@@ -193,7 +204,7 @@ class AnnotationLine:
 
 
 @dataclass
-class AnnotationText:
+class _AnnotationText:
     """A dataclass for the text of testing annotation.
 
     Attributes:
@@ -208,7 +219,7 @@ class AnnotationText:
 
 
 @dataclass
-class Annotation:
+class _Annotation:
     """A dataclass for the annotation of testing.
 
     Attributes:
@@ -216,5 +227,5 @@ class Annotation:
         text: The text of the annotation.
     """
 
-    line: AnnotationLine
-    text: AnnotationText
+    line: _AnnotationLine
+    text: _AnnotationText

@@ -22,12 +22,24 @@
 
 """Toolkit modules."""
 
-from . import _data_modifier as data_modifier
-from . import _dataset as dataset
-from . import _similarity as similarity
+from . import (
+    bootstrap,
+    data_modifier,
+    dataset,
+    kmeans,
+    pca,
+    plots,
+    similarity,
+    types,
+)
 
 __all__ = [
+    "bootstrap",
     "data_modifier",
     "dataset",
+    "kmeans",
+    "pca",
+    "plots",
     "similarity",
+    "types",
 ]

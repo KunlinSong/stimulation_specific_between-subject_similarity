@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 from nibabel.loadsave import load as nib_load
 
-from ._types import Any, Stimulation
+from analysis_toolkit.basic_toolkit.types import Any, _Stimulation
 
 __all__ = [
     "Database",
@@ -49,7 +49,7 @@ class _RealSubjectData:
     def __new__(
         cls,
         path: str,
-        stimulation: Stimulation,
+        stimulation: _Stimulation,
         subject: str | None = None,
     ) -> pd.DataFrame:
         """Create a pandas DataFrame from a path.
@@ -75,16 +75,7 @@ class _RealSubjectData:
             "subject": subject,
             "data": data,
         }
-        subject_data = {
-            k: cls._value_to_series(v) for k, v in subject_data.items()
-        }
-        return pd.DataFrame(subject_data)
-
-    @staticmethod
-    def _value_to_series(value: Any) -> pd.Series:
-        return pd.Series(
-            data=value,
-        )
+        return pd.Series(subject_data).to_frame().T
 
     @classmethod
     def _get_data(cls, path: str) -> np.ndarray:
@@ -185,7 +176,8 @@ class Database:
     def __new__(
         cls,
         path_lst: list[str],
-        stimulation: Stimulation,
+        stimulation: _Stimulation,
+        subject_lst: list[str] | None = None,
         gen_random: bool = True,
     ) -> pd.DataFrame:
         """Create a pandas DataFrame from a list of paths.
@@ -193,10 +185,17 @@ class Database:
         Args:
             path_lst: A list of paths to the fMRI data.
             stimulation: The stimulation type.
+            subject_lst: A list of subject names with the same length of
+              paths_lst.  An optional argument to distinguish different
+              receivers of the same stimulation.
             gen_random: Generate random data and concatenate it with the
               real data if True.  Default is True.
         """
-        database = RealDatabase(paths_lst=path_lst, stimulation=stimulation)
+        database = RealDatabase(
+            paths_lst=path_lst,
+            stimulation=stimulation,
+            subject_lst=subject_lst,
+        )
         if gen_random:
             random_database = RandomDatabase(real_database=database)
             database = pd.concat(

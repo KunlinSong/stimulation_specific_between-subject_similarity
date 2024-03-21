@@ -26,14 +26,19 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-from ._types import KMeansResult, KMeansScores
+from analysis_toolkit.basic_toolkit.types import _KMeansResult, _KMeansScores
+
+__all__ = [
+    "kmeans_cluster",
+    "get_optimal_n_clusters",
+]
 
 
 def kmeans_cluster(
     data: np.ndarray,
     n_clusters: int,
     n_init: int = "auto",
-) -> KMeansResult:
+) -> _KMeansResult:
     """Performs K-means clustering on the data.
 
     We use the K-means algorithm to cluster the data into n_clusters
@@ -64,8 +69,8 @@ def kmeans_cluster(
         silhouette = np.nan
     else:
         silhouette = silhouette_score(data, kmeans.labels_)
-    scores = KMeansScores(inertia=kmeans.inertia_, silhouette=silhouette)
-    return KMeansResult(
+    scores = _KMeansScores(inertia=kmeans.inertia_, silhouette=silhouette)
+    return _KMeansResult(
         n_clusters=n_clusters,
         labels=kmeans.labels_,
         centers=kmeans.cluster_centers_,
@@ -73,7 +78,7 @@ def kmeans_cluster(
     )
 
 
-def get_optimal_n_clusters(results: list[KMeansResult]) -> int:
+def get_optimal_n_clusters(results: list[_KMeansResult]) -> int:
     """Returns the optimal number of clusters based on the silhouette
     score.
 

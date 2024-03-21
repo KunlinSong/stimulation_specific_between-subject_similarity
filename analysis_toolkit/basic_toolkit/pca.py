@@ -25,8 +25,6 @@
 import numpy as np
 from sklearn.decomposition import PCA as skPCA
 
-from ._types import Literal
-
 
 class PCA(skPCA):
     """A class for principal components analysis.

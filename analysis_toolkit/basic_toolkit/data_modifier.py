@@ -26,7 +26,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve
 
-from ._types import Literal
+from analysis_toolkit.basic_toolkit.types import Literal
 
 __all__ = [
     "calculate_gradient",
