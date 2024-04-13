@@ -1,3 +1,5 @@
+"""Types for specific project modules."""
+
 import struct
 from typing import (
     Any,

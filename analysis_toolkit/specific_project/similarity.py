@@ -1,97 +1,124 @@
-# MIT License
-#
-# Copyright (c) 2024 Kunlin SONG
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-""""""
-
+"""A specific project toolkit for similarity computation."""
 
 from functools import partial
 
 import numpy as np
 
-from analysis_toolkit.basic_toolkit.types import (
+import analysis_toolkit.basic_toolkit.data_modifier as data_modifier
+import analysis_toolkit.basic_toolkit.similarity as similarity
+from analysis_toolkit.specific_project.types import (
+    Callable,
     _FFTKwargs,
     _GradientKwargs,
     _PreprocessMethod,
     _SpatialAverageKwargs,
 )
 
-from . import toolkit as toolkit
+__all__ = [
+    "cs",
+    "pcc",
+]
 
 
-def _preprocess_data(
-    data: np.ndarray,
-    preprocess_method: _PreprocessMethod,
-    preprocess_kwargs: _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs,
-) -> np.ndarray:
-    valid_methods = ["FFT", "Gradient", "Spatial Average"]
-    get_func = lambda func: (
-        partial(func, **preprocess_kwargs)
-        if (preprocess_kwargs is not None)
-        else func
-    )
-    match preprocess_method:
+def _get_preprocess_func(
+    name: _PreprocessMethod,
+    func_kwargs: _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs | None,
+) -> Callable:
+    match name:
         case "FFT":
-            preprocess_func = get_func(toolkit.data_modifier.fft)
+            func = data_modifier.fft
         case "Gradient":
-            preprocess_func = get_func(
-                toolkit.data_modifier.calculate_gradient
-            )
+            func = data_modifier.calculate_gradient
         case "Spatial Average":
-            preprocess_func = get_func(toolkit.data_modifier.spatial_average)
+            func = data_modifier.spatial_average
         case _:
-            raise ValueError(
-                f"Precprocess method must be one of {valid_methods}, "
-                f"but got {preprocess_method}."
-            )
-    return preprocess_func(data)
+            raise ValueError(f"Invalid preprocess method: {name}")
+    if func_kwargs is not None:
+        func = partial(func, **func_kwargs)
+    return func
 
 
-def pearson_correlation_coefficient(
+def _preprocess(
     x: np.ndarray,
     y: np.ndarray,
-    *,
-    preprocess_method: _PreprocessMethod | None = None,
+    preprocess_method: _PreprocessMethod,
     preprocess_kwargs: (
         _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs | None
-    ) = None,
-) -> float:
-    preprocess = partial(
-        _preprocess_data,
-        preprocess_method=preprocess_method,
-        preprocess_kwargs=preprocess_kwargs,
+    ),
+) -> tuple[np.ndarray, np.ndarray]:
+    preprocess_func = _get_preprocess_func(
+        name=preprocess_method, func_kwargs=preprocess_kwargs
     )
-    x, y = preprocess(x), preprocess(y)
-    return toolkit.similarity.pearson_correlation_coefficient(x, y)
+    return preprocess_func(x), preprocess_func(y)
 
 
-def cosine_similarity(
+def pcc(
     x: np.ndarray,
     y: np.ndarray,
-    *,
     preprocess_method: _PreprocessMethod | None,
+    preprocess_kwargs: (
+        _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs | None
+    ),
 ) -> float:
-    preprocess = partial(
-        _preprocess_data,
-        preprocess_method=preprocess_method,
-        preprocess_kwargs=None,
-    )
-    x, y = preprocess(x), preprocess(y)
-    return toolkit.similarity.cosine_similarity(x, y)
+    """Compute the Pearson correlation coefficient between two arrays.
+
+    We use the Pearson correlation coefficient to compute the correlation
+    between two arrays.  Before computing the correlation, the input
+    arrays can be preprocessed with the specified method and its
+    arguments.  The Pearson correlation coefficient ranges from -1 to 1.
+
+    Args:
+        x: An N-dimensional array.
+        y: Another N-dimensional array with the same shape as x.
+        preprocess_method: The method to preprocess the input arrays.
+          It can be one of the following: "FFT", "Gradient",
+          "Spatial Average", or None.  If None, no preprocessing is
+          performed.  Defaults to None.
+
+    Returns:
+        The Pearson correlation coefficient, ranging from -1 to 1.
+
+    Raises:
+        AssertionError: If the input arrays have different shapes.
+        ValueError: If the preprocess method is invalid.
+    """
+    if preprocess_method is not None:
+        x, y = _preprocess(x, y, preprocess_method, preprocess_kwargs)
+    return similarity.pearson_correlation_coefficient(x=x, y=y)
+
+
+def cs(
+    x: np.ndarray,
+    y: np.ndarray,
+    preprocess_method: _PreprocessMethod | None,
+    preprocess_kwargs: (
+        _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs | None
+    ),
+) -> float:
+    """Compute the cosine similarity between two arrays.
+
+    We use the cosine similarity to compute the similarity between two
+    arrays.  Before computing the similarity, the input
+    arrays can be preprocessed with the specified method and its
+    arguments.  The cosine similarity ranges from -1 to 1.
+
+    Args:
+        x: An N-dimensional array.
+        y: Another N-dimensional array with the same shape as x.
+        preprocess_method: The method to preprocess the input arrays.
+          It can be one of the following: "FFT", "Gradient",
+          "Spatial Average", or None.  If None, no preprocessing is
+          performed.  Defaults to None.
+        preprocess_kwargs: The keyword arguments for the preprocess
+          method.
+
+    Returns:
+        The cosine similarity, ranging from -1 to 1.
+
+    Raises:
+        AssertionError: If the input arrays have different shapes.
+        ValueError: If the preprocess method is invalid.
+    """
+    if preprocess_method is not None:
+        x, y = _preprocess(x, y, preprocess_method, preprocess_kwargs)
+    return similarity.cosine_similarity(x=x, y=y)

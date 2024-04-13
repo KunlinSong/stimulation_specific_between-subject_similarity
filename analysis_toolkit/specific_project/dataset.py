@@ -1,32 +1,10 @@
-# MIT License
-#
-# Copyright (c) 2024 Kunlin SONG
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-"""Dataset module for this analysis"""
-
+"""Dataset module for this specific project."""
 
 import dataclasses
 import os
 import re
 from itertools import combinations
-from typing import Generator
+from typing import Generator, Literal
 
 import nibabel as nib
 import numpy as np
@@ -46,6 +24,15 @@ from .types import (
     _Stimulation,
     _Structure,
 )
+
+__all__ = [
+    "add_similarity_data",
+    "get_region",
+    "get_structure",
+    "get_hemisphere",
+    "Dataset",
+    "PatternDataset",
+]
 
 
 def get_region(structure: _Structure, hemisphere: _Hemisphere) -> _Region:
@@ -289,38 +276,62 @@ class PatternDataset:
         return pd.concat(pattern_dataset_lst, ignore_index=True)
 
 
-class SimilarityDataset:
-    pass
-    # TODO: Add the SimilarityDataset class
-    # matrix, region, structure, hemisphere, modify_method, similarity, random_visual, random_auditory, real_visual, real_auditory, pattern_visual, pattern_auditory
-    # e.g. random_visual: can be None of list of idx. If is random or
-    #   real, it need to be idx lst of dataset. If is pattern, it need
-    #   to be idx lst of pattern dataset. pattern idx need to along the
-    #   axis 1 of the matrix.
+@dataclasses.dataclass
+class IndexInfo:
+    subject_idx: int
+    data_type: Literal["Random", "Real", "Pattern"]
+    stimulation: _Stimulation
 
 
-# @dataclasses.dataclass
-# class SubjectSimilarityVector:
-#     subject_idx: int
-#     data_type: _DATA_TYPE
-#     stimulation: _STIMULATION
-#     structure: _STRUCTURE
-#     hemisphere: _HEMISPHERE
-#     subject: str
-#     idx: int
-#     similarity_vector: np.ndarray
+def add_similarity_data(
+    similarity_dataset: pd.DataFrame,
+    matrix: np.ndarray,
+    region: str,
+    structure: str,
+    hemisphere: str,
+    modify_method: str,
+    similarity: str,
+    matrix_type: Literal["subject-subject", "subject-pattern"],
+    x_index_info: dict[int, IndexInfo],
+    y_index_info: dict[int, IndexInfo],
+) -> pd.DataFrame:
+    """Append a new similarity data to the similarity dataset.
 
+    Args:
+        similarity_dataset: The dataset to append the new similarity data.
+        matrix: The similarity matrix.
+        region: The region of the brain.
+        structure: The structure of the brain.
+        hemisphere: The hemisphere of the brain.
+        modify_method: The preprocessing method used before calculating
+          the similarity.
+        similarity: The similarity method used to calculate the similarity.
+        x_index_info: A dictionary of the similarity's index's
+          information of the x-axis of the matrix.
+        y_index_info: A dictionary of the similarity's index's
+          information of the y-axis of the matrix.
 
-# @dataclasses.dataclass
-# class SimilarityMatrix:
-#     matrix: np.ndarray
-#     region: _REGION
-#     structure: _STRUCTURE
-#     hemisphere: _HEMISPHERE
-#     stimulation_slices: dict[
-#         Literal[
-#             "Random Auditory", "Random Visual", "Real Auditory", "Real Visual"
-#         ],
-#         slice,
-#     ]
-#     subject_vectors: dict[int, SubjectSimilarityVector] | None = None
+    Returns:
+        The similarity dataset with the new similarity data.
+    """
+    data = (
+        pd.Series(
+            {
+                "matrix": matrix,
+                "region": region,
+                "structure": structure,
+                "hemisphere": hemisphere,
+                "modify_method": modify_method,
+                "similarity": similarity,
+                "matrix_type": matrix_type,
+                "x_indices": x_index_info,
+                "y_indices": y_index_info,
+            }
+        )
+        .to_frame()
+        .T
+    )
+    similarity_dataset = pd.concat(
+        [similarity_dataset, data], ignore_index=True
+    )
+    return similarity_dataset
