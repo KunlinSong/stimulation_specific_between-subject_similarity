@@ -6,7 +6,6 @@ import re
 from itertools import combinations
 from typing import Generator, Literal
 
-import nibabel as nib
 import numpy as np
 import pandas as pd
 import yaml
