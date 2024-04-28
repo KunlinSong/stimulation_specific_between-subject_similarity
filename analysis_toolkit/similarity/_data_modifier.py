@@ -1,10 +1,10 @@
 """A basic toolkit for data modification."""
 
+from typing import Literal
+
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve
-
-from analysis_toolkit.basic_toolkit.types import Literal
 
 __all__ = [
     "calculate_gradient",
@@ -54,7 +54,7 @@ def fft(
 def calculate_gradient(
     data: np.ndarray,
     axis: int | Literal["x", "y", "z"] | None = None,
-    keep_raw: bool = False,
+    keep_raw: bool = True,
 ) -> np.ndarray:
     """Computes the gradient of the data.
 
@@ -97,6 +97,7 @@ def spatial_average(
     data: np.ndarray,
     kernel_size: int = 3,
     sigma: float = 1.0,
+    keep_raw: bool = True,
 ) -> np.ndarray:
     """Performs spatial averaging on the data.
 
@@ -112,6 +113,7 @@ def spatial_average(
           to 3.
         sigma: The standard deviation of the Gaussian kernel.  Defaults
           to 1.0.
+        keep_raw: Whether to keep the raw data in the returned array.
 
     Returns:
         The result of spatial averaging.
@@ -121,8 +123,15 @@ def spatial_average(
     kernel[(kernel_center,) * data.ndim] = 1
     kernel = gaussian_filter(kernel, sigma=sigma)
 
-    data = np.nan_to_num(data, copy=True, nan=0.0)
-    data = np.pad(
-        data, pad_width=kernel_center, mode="constant", constant_values=0
+    averaged_data = np.nan_to_num(data, copy=True, nan=0.0)
+    averaged_data = np.pad(
+        averaged_data,
+        pad_width=kernel_center,
+        mode="constant",
+        constant_values=0,
     )
-    return convolve(data, kernel, mode="valid")
+    averaged_data = convolve(averaged_data, kernel, mode="valid")
+
+    if keep_raw:
+        averaged_data = np.stack([averaged_data, data])
+    return averaged_data

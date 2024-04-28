@@ -1,23 +1,35 @@
 """A specific project toolkit for similarity computation."""
 
 from functools import partial
+from typing import Callable, Literal, TypedDict
 
 import numpy as np
 
-import analysis_toolkit.basic_toolkit.data_modifier as data_modifier
-import analysis_toolkit.basic_toolkit.similarity as similarity
-from analysis_toolkit.specific_project.types import (
-    Callable,
-    _FFTKwargs,
-    _GradientKwargs,
-    _PreprocessMethod,
-    _SpatialAverageKwargs,
+from ._data_modifier import calculate_gradient, fft, spatial_average
+from ._similarity_func import (
+    cosine_similarity,
+    pearson_correlation_coefficient,
 )
 
 __all__ = [
     "cs",
     "pcc",
 ]
+_PreprocessMethod = Literal["FFT", "Gradient", "Spatial Average"]
+
+
+class _FFTKwargs(TypedDict):
+    part: Literal["real", "imaginary", "both"]
+
+
+class _GradientKwargs(TypedDict):
+    axis: int | Literal["x", "y", "z"] | None
+    keep_raw: bool
+
+
+class _SpatialAverageKwargs(TypedDict):
+    kernel_size: int
+    sigma: float
 
 
 def _get_preprocess_func(
@@ -26,11 +38,11 @@ def _get_preprocess_func(
 ) -> Callable:
     match name:
         case "FFT":
-            func = data_modifier.fft
+            func = fft
         case "Gradient":
-            func = data_modifier.calculate_gradient
+            func = calculate_gradient
         case "Spatial Average":
-            func = data_modifier.spatial_average
+            func = spatial_average
         case _:
             raise ValueError(f"Invalid preprocess method: {name}")
     if func_kwargs is not None:
@@ -55,10 +67,10 @@ def _preprocess(
 def pcc(
     x: np.ndarray,
     y: np.ndarray,
-    preprocess_method: _PreprocessMethod | None,
+    preprocess_method: _PreprocessMethod | None = None,
     preprocess_kwargs: (
         _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs | None
-    ),
+    ) = None,
 ) -> float:
     """Compute the Pearson correlation coefficient between two arrays.
 
@@ -74,6 +86,8 @@ def pcc(
           It can be one of the following: "FFT", "Gradient",
           "Spatial Average", or None.  If None, no preprocessing is
           performed.  Defaults to None.
+        preprocess_kwargs: The keyword arguments for the preprocess
+          method.  Defaults to None.
 
     Returns:
         The Pearson correlation coefficient, ranging from -1 to 1.
@@ -84,16 +98,16 @@ def pcc(
     """
     if preprocess_method is not None:
         x, y = _preprocess(x, y, preprocess_method, preprocess_kwargs)
-    return similarity.pearson_correlation_coefficient(x=x, y=y)
+    return pearson_correlation_coefficient(x=x, y=y)
 
 
 def cs(
     x: np.ndarray,
     y: np.ndarray,
-    preprocess_method: _PreprocessMethod | None,
+    preprocess_method: _PreprocessMethod | None = None,
     preprocess_kwargs: (
         _FFTKwargs | _GradientKwargs | _SpatialAverageKwargs | None
-    ),
+    ) = None,
 ) -> float:
     """Compute the cosine similarity between two arrays.
 
@@ -110,7 +124,7 @@ def cs(
           "Spatial Average", or None.  If None, no preprocessing is
           performed.  Defaults to None.
         preprocess_kwargs: The keyword arguments for the preprocess
-          method.
+          method.  Defaults to None.
 
     Returns:
         The cosine similarity, ranging from -1 to 1.
@@ -121,4 +135,4 @@ def cs(
     """
     if preprocess_method is not None:
         x, y = _preprocess(x, y, preprocess_method, preprocess_kwargs)
-    return similarity.cosine_similarity(x=x, y=y)
+    return cosine_similarity(x=x, y=y)

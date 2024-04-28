@@ -1,11 +1,10 @@
 """A module for bootstrap testing."""
 
 from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 from scipy import stats
-
-from analysis_toolkit.basic_toolkit.types import Callable
 
 __all__ = ["BootstrapTest"]
 
